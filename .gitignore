@@ -8,5 +8,10 @@ __pycache__/
 crates/fx-wasm/pkg/
 
 # Recreated by scripts/bootstrap.sh
-third_party/josim/build/
+third_party/josim/
+third_party/pylse/
 third_party/oss-cad-suite/
+
+# Bytecode shipped in the unmodified RSFQlib snapshot
+!lib/rsfqlib/**/__pycache__/
+!lib/rsfqlib/**/*.pyc

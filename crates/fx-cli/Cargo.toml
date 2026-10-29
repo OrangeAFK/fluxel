@@ -1,0 +1,12 @@
+[package]
+name = "fx-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+fx-sta = { path = "../fx-sta" }
+fx-stat = { path = "../fx-stat" }
+fx-flow = { path = "../fx-flow" }
+fx-world = { path = "../fx-world" }

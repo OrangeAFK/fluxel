@@ -1,0 +1,9 @@
+[package]
+name = "fx-ir"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+fx-time = { path = "../fx-time" }

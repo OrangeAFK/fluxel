@@ -1,0 +1,10 @@
+[package]
+name = "fx-families"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+fx-kernel = { path = "../fx-kernel" }
+fx-analog = { path = "../fx-analog" }

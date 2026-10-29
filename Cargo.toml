@@ -1,0 +1,21 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/fx-time",
+    "crates/fx-ir",
+    "crates/fx-kernel",
+    "crates/fx-analog",
+    "crates/fx-families",
+    "crates/fx-sta",
+    "crates/fx-stat",
+    "crates/fx-flow",
+    "crates/fx-world",
+    "crates/fx-cli",
+    "crates/fx-wasm",
+]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+publish = false

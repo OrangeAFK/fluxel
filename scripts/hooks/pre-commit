@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Reject staged changes under golden/ or lib/rsfqlib/ unless FLUXEL_GOLDEN_UPDATE=1.
+set -euo pipefail
+
+if [[ "${FLUXEL_GOLDEN_UPDATE:-}" == "1" ]]; then
+  exit 0
+fi
+
+blocked=()
+while IFS= read -r -d '' status; do
+  case "$status" in
+    R*|C*)
+      IFS= read -r -d '' oldpath
+      IFS= read -r -d '' newpath
+      for path in "$oldpath" "$newpath"; do
+        case "$path" in
+          golden/*|lib/rsfqlib/*) blocked+=("$path") ;;
+        esac
+      done
+      ;;
+    *)
+      IFS= read -r -d '' path
+      case "$path" in
+        golden/*|lib/rsfqlib/*) blocked+=("$path") ;;
+      esac
+      ;;
+  esac
+done < <(git diff --cached --name-status -z --find-renames)
+
+if ((${#blocked[@]} > 0)); then
+  echo "refusing staged changes under golden/ or lib/rsfqlib/:" >&2
+  printf '  %s\n' "${blocked[@]}" >&2
+  echo "Set FLUXEL_GOLDEN_UPDATE=1 only when regenerating golden data yourself." >&2
+  exit 1
+fi

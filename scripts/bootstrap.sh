@@ -156,6 +156,13 @@ install_web() {
   (cd "${ROOT}/web" && npm install)
 }
 
+install_hooks() {
+  chmod +x "${ROOT}/scripts/hooks/pre-commit"
+  git config --local core.hooksPath scripts/hooks
+}
+
+echo "bootstrap: hooks"
+install_hooks
 echo "bootstrap: rust"
 install_rust
 echo "bootstrap: node"

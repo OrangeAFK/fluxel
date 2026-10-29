@@ -1,0 +1,30 @@
+Fluxel
+Copyright (c) 2026 V S
+
+Fluxel is licensed under the GNU General Public License v3.0 or later.
+See the LICENSE file.
+
+This project includes the following third-party components.
+
+RSFQlib v3.0
+Copyright (c) 2018-2023 Lieze Schindler, Tessa Hall, Stellenbosch University
+https://github.com/sunmagnetics/RSFQlib
+Commit ac37a114349e183bf990de067af355777e1501d1
+Bundled unmodified under lib/rsfqlib/.
+lib/rsfqlib/LICENSE is the GNU General Public License, version 3.
+lib/rsfqlib/README.md also contains a separate permissive notice for the cell library.
+Both notices are recorded in lib/rsfqlib/SOURCE.md and are not reconciled here.
+Fluxel is GPLv3 because these files are included.
+
+JoSIM v2.7
+Copyright (c) 2020 Johannes Delport
+https://github.com/JoeyDelp/JoSIM
+MIT License. See third_party/josim/LICENSE.
+
+PyLSE (tag pldi-2022)
+Copyright (c) 2021-2022, UCSBarchlab
+https://github.com/UCSBarchlab/PyLSE
+BSD 3-Clause License. See third_party/pylse/LICENSE.
+PyLSE vendors pyuppaal under third_party/pylse/third-party/pyuppaal,
+which is licensed under the GNU General Public License v3.0.
+See third_party/pylse/third-party/pyuppaal/LICENSE.

@@ -1,0 +1,19 @@
+---
+description: Token-only styling and a stop-and-propose gate for new UI
+globs: web/**
+alwaysApply: false
+---
+
+# Design
+
+Follow `docs/DESIGN.md`. The Playground look and part models are the baseline. Do not copy its behavioral timing into the kernel.
+
+- Take colors and fonts only from `web/src/theme/tokens.ts`. No literal colors, font names, or font stacks in components.
+- Drive motion only from kernel events. No timers and no decorative motion.
+- Spin a cell's junctions once per switching event, in characterized order, across that cell's delay.
+- Failed switch: a half-turn that falls back. Spontaneous switch: a wheel spins with no input. `Uncharacterized`: tint the part.
+- Draw a storage bead only while that cell's state machine is stored.
+- Place parts facing away from the player. Output is local +X.
+- Panels use a 2 px outline and a 3 px bevel, with square corners. Stone panels hold controls; cryo panels hold data. No gradients, and no shadow beyond the outline.
+- On the targeted part, show name, JJ count, bias posts, delay at the current bias, phase (slips × 2π), and one concept sentence.
+- A new part, overlay, panel region, or interaction pattern: stop. Propose 2–3 options (screenshot or HTML mock). Wait for a pick. Log it in `docs/DECISIONS.md`.

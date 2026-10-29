@@ -1,0 +1,11 @@
+---
+description: Golden data and validation thresholds are read-only
+alwaysApply: true
+---
+
+# Golden data
+
+- Never create, edit, or delete files under `golden/` or `lib/rsfqlib/`.
+- Generate golden entries only with `tools/char/golden.py`. Do not hand-edit them.
+- Never loosen a threshold, tolerance, or assertion to make a test pass. Thresholds live in SPEC §8. Change one only by logging the reason in `docs/DECISIONS.md`.
+- If a golden test fails, stop and report the diff. Do not patch the suite, delete the test, or add `#[ignore]` without a `docs/DECISIONS.md` entry.

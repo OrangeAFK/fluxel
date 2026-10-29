@@ -1,0 +1,13 @@
+---
+description: Kernel time, fanout, determinism, errors, and crate boundaries
+alwaysApply: true
+---
+
+# Core
+
+- Kernel time is `Femtos(i64)` only. No `f64` time in the kernel. Round LUT outputs to 1 fs.
+- Order events by `(t, target, port, seq)`. The same design and stimulus must yield a byte-identical event log on every platform.
+- Fanout is 1. A `Net` has one driver and one sink. Reject fanout > 1 in the IR constructor; the legalizer inserts splitters.
+- Library crates return `thiserror` errors. No `unwrap` or `expect`.
+- Dependencies point only downward: `fx-time` ← `fx-ir` ← {`fx-kernel`, `fx-analog`} ← `fx-families` ← {`fx-sta`, `fx-stat`, `fx-flow`, `fx-world`} ← {`fx-cli`, `fx-wasm`}. `fx-analog` must not depend on `fx-kernel`.
+- Ask before adding a dependency.

@@ -1,0 +1,12 @@
+---
+description: Worker simulation, instanced rendering, and TypeScript limits
+globs: web/**
+alwaysApply: false
+---
+
+# Web
+
+- Run simulation only in a Web Worker on `fx-wasm`. Never block the main thread.
+- Keep WASM single-threaded. Parallelize with one simulation per worker.
+- Render with instanced meshes. Greedy-mesh chunks. Collapse distant parts to LOD blocks.
+- TypeScript is strict. Ask before adding a UI framework.

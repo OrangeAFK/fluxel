@@ -1,0 +1,12 @@
+---
+description: Test-first changes, property tests, and hot-path benchmarks
+alwaysApply: true
+---
+
+# Testing
+
+- Every change adds or updates a test. Write the test first, run it, and confirm it fails for the expected reason.
+- Cover kernel ordering and determinism with proptest.
+- Cover hot paths with criterion benches.
+- Iterate until `cargo test -p <crate>` or `pytest` passes.
+- Do not delete a failing test or add `#[ignore]` without a `docs/DECISIONS.md` entry.

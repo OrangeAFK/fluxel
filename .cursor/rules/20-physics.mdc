@@ -1,0 +1,21 @@
+---
+description: RCSJ equations, units, and the shared pulse-timestamp definition
+globs: crates/fx-analog/**,tools/char/**
+alwaysApply: false
+---
+
+# Physics
+
+Use SI inside the solver. Convert to fs or ps only at boundaries. Integrate with the trapezoidal rule at fixed step h (default 0.025 ps).
+
+Φ₀ = 2.067833848×10⁻¹⁵ Wb.
+
+- I_JJ [A] = I_c sin φ + (Φ₀/(2π R)) φ̇ + (Φ₀ C/(2π)) φ̈
+  - φ [rad], I_c [A], R [Ω], C [F], φ̇ [rad/s], φ̈ [rad/s²]
+- I_L [A] = (Φ₀/(2π L)) (φ_a − φ_b), with L [H]
+- V [V] = (Φ₀/(2π)) φ̇
+
+A pulse occurs when the reference JJ phase crosses (2k+1)π, found by linear interpolation between samples. Python extraction, the analog tier, and the golden suite all use this definition.
+
+- Comment the governing equation beside the code that implements it.
+- Ship every new element with an analytic sanity test. Keep these passing: ∫V dt over one pulse equals Φ₀; a single JJ has average V ≈ 0 below I_c and V = Φ₀ × f above it; a JTL chain matches JoSIM.

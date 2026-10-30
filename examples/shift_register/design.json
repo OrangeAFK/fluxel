@@ -1,0 +1,28 @@
+{
+  "instances": {
+    "s0": { "family": "rsfq", "cell": "SPLIT", "bias_domain": "b" },
+    "s1": { "family": "rsfq", "cell": "SPLIT", "bias_domain": "b" },
+    "s2": { "family": "rsfq", "cell": "SPLIT", "bias_domain": "b" },
+    "dff0": { "family": "rsfq", "cell": "DFF", "bias_domain": "b" },
+    "dff1": { "family": "rsfq", "cell": "DFF", "bias_domain": "b" },
+    "dff2": { "family": "rsfq", "cell": "DFF", "bias_domain": "b" },
+    "dff3": { "family": "rsfq", "cell": "DFF", "bias_domain": "b" }
+  },
+  "nets": [
+    { "driver": { "port": "d" }, "sink": { "instance": "dff0", "port": "a" }, "wire": { "kind": "direct" } },
+    { "driver": { "port": "clk" }, "sink": { "instance": "s0", "port": "a" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "s0", "port": "q0" }, "sink": { "instance": "s1", "port": "a" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "s0", "port": "q1" }, "sink": { "instance": "s2", "port": "a" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "s1", "port": "q0" }, "sink": { "instance": "dff0", "port": "clk" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "s1", "port": "q1" }, "sink": { "instance": "dff1", "port": "clk" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "s2", "port": "q0" }, "sink": { "instance": "dff2", "port": "clk" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "s2", "port": "q1" }, "sink": { "instance": "dff3", "port": "clk" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "dff0", "port": "q" }, "sink": { "instance": "dff1", "port": "a" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "dff1", "port": "q" }, "sink": { "instance": "dff2", "port": "a" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "dff2", "port": "q" }, "sink": { "instance": "dff3", "port": "a" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "dff3", "port": "q" }, "sink": { "port": "q" }, "wire": { "kind": "direct" } }
+  ],
+  "ports": { "in": ["d", "clk"], "out": ["q"] },
+  "clock_domains": { "clk": ["dff0", "dff1", "dff2", "dff3"] },
+  "bias_domains": ["b"]
+}

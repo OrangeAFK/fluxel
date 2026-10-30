@@ -1,0 +1,14 @@
+{
+  "instances": {
+    "t0": { "family": "rsfq", "cell": "TFF", "bias_domain": "b" },
+    "t1": { "family": "rsfq", "cell": "TFF", "bias_domain": "b" }
+  },
+  "nets": [
+    { "driver": { "port": "in" }, "sink": { "instance": "t0", "port": "a" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "t0", "port": "q" }, "sink": { "instance": "t1", "port": "a" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "t1", "port": "q" }, "sink": { "port": "out" }, "wire": { "kind": "direct" } }
+  ],
+  "ports": { "in": ["in"], "out": ["out"] },
+  "clock_domains": {},
+  "bias_domains": ["b"]
+}

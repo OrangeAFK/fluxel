@@ -1,0 +1,26 @@
+{
+  "instances": {
+    "j0": { "family": "rsfq", "cell": "JTL", "bias_domain": "b" },
+    "j1": { "family": "rsfq", "cell": "JTL", "bias_domain": "b" },
+    "j2": { "family": "rsfq", "cell": "JTL", "bias_domain": "b" },
+    "j3": { "family": "rsfq", "cell": "JTL", "bias_domain": "b" },
+    "j4": { "family": "rsfq", "cell": "JTL", "bias_domain": "b" },
+    "j5": { "family": "rsfq", "cell": "JTL", "bias_domain": "b" },
+    "j6": { "family": "rsfq", "cell": "JTL", "bias_domain": "b" },
+    "j7": { "family": "rsfq", "cell": "JTL", "bias_domain": "b" }
+  },
+  "nets": [
+    { "driver": { "port": "in" }, "sink": { "instance": "j0", "port": "a" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "j0", "port": "q" }, "sink": { "instance": "j1", "port": "a" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "j1", "port": "q" }, "sink": { "instance": "j2", "port": "a" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "j2", "port": "q" }, "sink": { "instance": "j3", "port": "a" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "j3", "port": "q" }, "sink": { "instance": "j4", "port": "a" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "j4", "port": "q" }, "sink": { "instance": "j5", "port": "a" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "j5", "port": "q" }, "sink": { "instance": "j6", "port": "a" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "j6", "port": "q" }, "sink": { "instance": "j7", "port": "a" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "j7", "port": "q" }, "sink": { "port": "out" }, "wire": { "kind": "direct" } }
+  ],
+  "ports": { "in": ["in"], "out": ["out"] },
+  "clock_domains": {},
+  "bias_domains": ["b"]
+}

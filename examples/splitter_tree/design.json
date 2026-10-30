@@ -1,0 +1,19 @@
+{
+  "instances": {
+    "s0": { "family": "rsfq", "cell": "SPLIT", "bias_domain": "b" },
+    "s1": { "family": "rsfq", "cell": "SPLIT", "bias_domain": "b" },
+    "s2": { "family": "rsfq", "cell": "SPLIT", "bias_domain": "b" }
+  },
+  "nets": [
+    { "driver": { "port": "in" }, "sink": { "instance": "s0", "port": "a" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "s0", "port": "q0" }, "sink": { "instance": "s1", "port": "a" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "s0", "port": "q1" }, "sink": { "instance": "s2", "port": "a" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "s1", "port": "q0" }, "sink": { "port": "out0" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "s1", "port": "q1" }, "sink": { "port": "out1" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "s2", "port": "q0" }, "sink": { "port": "out2" }, "wire": { "kind": "direct" } },
+    { "driver": { "instance": "s2", "port": "q1" }, "sink": { "port": "out3" }, "wire": { "kind": "direct" } }
+  ],
+  "ports": { "in": ["in"], "out": ["out0", "out1", "out2", "out3"] },
+  "clock_domains": {},
+  "bias_domains": ["b"]
+}

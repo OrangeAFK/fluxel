@@ -1,0 +1,36 @@
+{
+  "name": "NOT",
+  "family": "rsfq",
+  "provenance": "behavioral",
+  "ports": { "in": ["a", "clk"], "out": ["q"] },
+  "faces": { "a": "W", "clk": "S", "q": "E" },
+  "states": ["clear", "set"],
+  "initial": "clear",
+  "transitions": [
+    { "from": "clear", "on": "a", "to": "set", "fire": [] },
+    {
+      "from": "set",
+      "on": "a",
+      "to": "set",
+      "fire": [],
+      "note": "second pulse escapes"
+    },
+    {
+      "from": "clear",
+      "on": "clk",
+      "to": "clear",
+      "fire": [{ "port": "q", "delay": "t_clk_q" }],
+      "note": "outputs when no input arrived"
+    },
+    { "from": "set", "on": "clk", "to": "clear", "fire": [] }
+  ],
+  "constraints": [
+    { "kind": "setup", "first": "a", "then": "clk", "window": "t_setup" },
+    { "kind": "hold", "first": "clk", "then": "a", "window": "t_hold" }
+  ],
+  "jj_count": 8,
+  "netlist": null,
+  "lut": null,
+  "notes": "TODO-M2: output delays are 5000 fs and windows are 1000 fs, placeholders. Models lib/rsfqlib/RSFQlib/mitll_NOT/THmitll_NOT_v3p0.v. jj_count is 8, from B1-B8 in THmitll_NOT_v3p0_base.cir.",
+  "delays": { "t_clk_q": 5000, "t_setup": 1000, "t_hold": 1000 }
+}

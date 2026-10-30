@@ -168,9 +168,13 @@
       "type": "string"
     },
     "jj_count": {
+      "description": "Junctions in the library netlist. Absent when no netlist exists.",
       "format": "uint32",
       "minimum": 0.0,
-      "type": "integer"
+      "type": [
+        "integer",
+        "null"
+      ]
     },
     "lut": {
       "type": [
@@ -182,6 +186,13 @@
       "type": "string"
     },
     "netlist": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "notes": {
+      "description": "Which library file this machine models.",
       "type": [
         "string",
         "null"
@@ -211,7 +222,6 @@
     "faces",
     "family",
     "initial",
-    "jj_count",
     "name",
     "ports",
     "provenance",

@@ -1,0 +1,43 @@
+{
+  "name": "OR",
+  "family": "rsfq",
+  "provenance": "behavioral",
+  "ports": { "in": ["a", "b", "clk"], "out": ["q"] },
+  "faces": { "a": "W", "b": "N", "clk": "S", "q": "E" },
+  "states": ["none", "seen"],
+  "initial": "none",
+  "transitions": [
+    { "from": "none", "on": "a", "to": "seen", "fire": [] },
+    {
+      "from": "seen",
+      "on": "a",
+      "to": "seen",
+      "fire": [],
+      "note": "second pulse escapes"
+    },
+    { "from": "none", "on": "b", "to": "seen", "fire": [] },
+    {
+      "from": "seen",
+      "on": "b",
+      "to": "seen",
+      "fire": [],
+      "note": "second pulse escapes"
+    },
+    { "from": "none", "on": "clk", "to": "none", "fire": [] },
+    {
+      "from": "seen",
+      "on": "clk",
+      "to": "none",
+      "fire": [{ "port": "q", "delay": "t_clk_q" }]
+    }
+  ],
+  "constraints": [
+    { "kind": "setup", "first": "a", "then": "clk", "window": "t_setup_a" },
+    { "kind": "setup", "first": "b", "then": "clk", "window": "t_setup_b" }
+  ],
+  "jj_count": 12,
+  "netlist": null,
+  "lut": null,
+  "notes": "TODO-M2: output delays are 5000 fs and windows are 1000 fs, placeholders. Models lib/rsfqlib/RSFQlib/mitll_OR2/THmitll_OR2_v3p0.v. jj_count is 12, from B1-B12 in THmitll_OR2_v3p0_base.cir.",
+  "delays": { "t_clk_q": 5000, "t_setup_a": 1000, "t_setup_b": 1000 }
+}

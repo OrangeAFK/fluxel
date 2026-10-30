@@ -1,0 +1,24 @@
+{
+  "name": "TFF",
+  "family": "rsfq",
+  "provenance": "behavioral",
+  "ports": { "in": ["a"], "out": ["q"] },
+  "faces": { "a": "W", "q": "E" },
+  "states": ["clear", "set"],
+  "initial": "clear",
+  "transitions": [
+    { "from": "clear", "on": "a", "to": "set", "fire": [] },
+    {
+      "from": "set",
+      "on": "a",
+      "to": "clear",
+      "fire": [{ "port": "q", "delay": "t_a_q" }]
+    }
+  ],
+  "constraints": [],
+  "jj_count": null,
+  "netlist": null,
+  "lut": null,
+  "notes": "No RSFQlib v3.0 source. Behavioral model of standard RSFQ TFF: 2 states, output on every second input. Placeholder delay. Not characterizable until a netlist is sourced.",
+  "delays": { "t_a_q": 5000 }
+}

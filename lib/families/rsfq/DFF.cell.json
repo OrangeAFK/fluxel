@@ -1,0 +1,34 @@
+{
+  "name": "DFF",
+  "family": "rsfq",
+  "provenance": "behavioral",
+  "ports": { "in": ["a", "clk"], "out": ["q"] },
+  "faces": { "a": "W", "clk": "S", "q": "E" },
+  "states": ["empty", "stored"],
+  "initial": "empty",
+  "transitions": [
+    { "from": "empty", "on": "a", "to": "stored", "fire": [] },
+    {
+      "from": "stored",
+      "on": "a",
+      "to": "stored",
+      "fire": [],
+      "note": "second pulse escapes"
+    },
+    {
+      "from": "stored",
+      "on": "clk",
+      "to": "empty",
+      "fire": [{ "port": "q", "delay": "t_clk_q" }]
+    },
+    { "from": "empty", "on": "clk", "to": "empty", "fire": [] }
+  ],
+  "constraints": [
+    { "kind": "hold", "first": "clk", "then": "a", "window": "t_hold" }
+  ],
+  "jj_count": 7,
+  "netlist": null,
+  "lut": null,
+  "notes": "TODO-M2: output delays are 5000 fs and windows are 1000 fs, placeholders. Models lib/rsfqlib/RSFQlib/mitll_DFF/THmitll_DFF_v3p0.v. jj_count is 7, from B1-B7 in THmitll_DFF_v3p0_base.cir. The Verilog specify block has ct_state0_clk_a and no setup arc.",
+  "delays": { "t_clk_q": 5000, "t_hold": 1000 }
+}

@@ -1,0 +1,38 @@
+{
+  "name": "NDRO",
+  "family": "rsfq",
+  "provenance": "behavioral",
+  "ports": { "in": ["a", "b", "clk"], "out": ["q"] },
+  "faces": { "a": "W", "b": "N", "clk": "S", "q": "E" },
+  "states": ["empty", "stored"],
+  "initial": "empty",
+  "transitions": [
+    { "from": "empty", "on": "a", "to": "stored", "fire": [] },
+    {
+      "from": "stored",
+      "on": "a",
+      "to": "stored",
+      "fire": [],
+      "note": "second pulse escapes"
+    },
+    { "from": "empty", "on": "b", "to": "empty", "fire": [] },
+    { "from": "stored", "on": "b", "to": "empty", "fire": [] },
+    { "from": "empty", "on": "clk", "to": "empty", "fire": [] },
+    {
+      "from": "stored",
+      "on": "clk",
+      "to": "stored",
+      "fire": [{ "port": "q", "delay": "t_clk_q" }]
+    }
+  ],
+  "constraints": [
+    { "kind": "hold", "first": "a", "then": "b", "window": "t_a_b" },
+    { "kind": "hold", "first": "b", "then": "a", "window": "t_b_a" },
+    { "kind": "hold", "first": "clk", "then": "clk", "window": "t_clk_clk" }
+  ],
+  "jj_count": 11,
+  "netlist": null,
+  "lut": null,
+  "notes": "TODO-M2: output delays are 5000 fs and windows are 1000 fs, placeholders. Models lib/rsfqlib/RSFQlib/mitll_NDRO/THmitll_NDRO_v3p0.v. a sets, b resets, and clk reads without clearing. jj_count is 11, from B1-B11 in THmitll_NDRO_v3p0_base.cir.",
+  "delays": { "t_clk_q": 5000, "t_a_b": 1000, "t_b_a": 1000, "t_clk_clk": 1000 }
+}

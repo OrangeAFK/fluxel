@@ -1,0 +1,29 @@
+{
+  "name": "SFQDC",
+  "family": "rsfq",
+  "provenance": "behavioral",
+  "ports": { "in": ["a"], "out": ["q"] },
+  "faces": { "a": "W", "q": "E" },
+  "states": ["low", "high"],
+  "initial": "low",
+  "transitions": [
+    {
+      "from": "low",
+      "on": "a",
+      "to": "high",
+      "fire": [{ "port": "q", "delay": "t_a_q" }]
+    },
+    {
+      "from": "high",
+      "on": "a",
+      "to": "low",
+      "fire": [{ "port": "q", "delay": "t_a_q" }]
+    }
+  ],
+  "constraints": [],
+  "jj_count": 8,
+  "netlist": null,
+  "lut": null,
+  "notes": "TODO-M2: t_a_q is a 5000 fs placeholder. No TimEx Verilog. Each pulse on a toggles the DC level and emits one edge on q. jj_count is 8, from B1-B8 in lib/rsfqlib/RSFQlib/mitll_SFQDC/THmitll_SFQDC_v3p0_base.cir.",
+  "delays": { "t_a_q": 5000 }
+}

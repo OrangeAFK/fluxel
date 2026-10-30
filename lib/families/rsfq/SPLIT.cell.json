@@ -1,0 +1,26 @@
+{
+  "name": "SPLIT",
+  "family": "rsfq",
+  "provenance": "behavioral",
+  "ports": { "in": ["a"], "out": ["q0", "q1"] },
+  "faces": { "a": "W", "q0": "E", "q1": "N" },
+  "states": ["idle"],
+  "initial": "idle",
+  "transitions": [
+    {
+      "from": "idle",
+      "on": "a",
+      "to": "idle",
+      "fire": [
+        { "port": "q0", "delay": "t_a_q0" },
+        { "port": "q1", "delay": "t_a_q1" }
+      ]
+    }
+  ],
+  "constraints": [],
+  "jj_count": 3,
+  "netlist": null,
+  "lut": null,
+  "notes": "TODO-M2: output delays are 5000 fs placeholders. Models lib/rsfqlib/RSFQlib/mitll_SPLIT/THmitll_SPLIT_v3p0.v. jj_count is 3, from B1-B3 in THmitll_SPLIT_v3p0_base.cir.",
+  "delays": { "t_a_q0": 5000, "t_a_q1": 5000 }
+}

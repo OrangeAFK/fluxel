@@ -325,6 +325,41 @@ fn characterized_missing_lut() {
     assert_eq!(parse_cell(&cell).unwrap_err(), CellError::MissingPath);
 }
 
+#[test]
+fn characterized_null_jj_count() {
+    let mut cell = spec_dff();
+    cell["jj_count"] = json!(null);
+    assert_eq!(parse_cell(&cell).unwrap_err(), CellError::MissingPath);
+}
+
+#[test]
+fn behavioral_null_jj_count_and_paths() {
+    let mut cell = behavioral_buf();
+    cell["jj_count"] = json!(null);
+    cell["netlist"] = json!(null);
+    cell["lut"] = json!(null);
+    let cell = parse_cell(&cell).unwrap();
+    assert_eq!(cell.provenance, Provenance::Behavioral);
+    assert_eq!(cell.jj_count, None);
+    assert_eq!(cell.netlist, None);
+    assert_eq!(cell.lut, None);
+}
+
+#[test]
+fn self_characterized_null_jj_count_and_paths() {
+    let mut cell = behavioral_buf();
+    cell["provenance"] = json!("self-characterized");
+    cell["jj_count"] = json!(null);
+    cell["netlist"] = json!(null);
+    cell["lut"] = json!(null);
+    cell.as_object_mut().unwrap().remove("delays");
+    let cell = parse_cell(&cell).unwrap();
+    assert_eq!(cell.provenance, Provenance::SelfCharacterized);
+    assert_eq!(cell.jj_count, None);
+    assert_eq!(cell.netlist, None);
+    assert_eq!(cell.lut, None);
+}
+
 fn two_instances(nets: Value, bias: &str) -> Value {
     json!({
         "instances": {
@@ -484,10 +519,11 @@ fn arb_cell() -> impl Strategy<Value = CellDef> {
                         then: "i0".into(),
                         window: "w".into(),
                     }],
-                    jj_count: jj,
+                    jj_count: Some(jj),
                     bias_ua: None,
                     netlist: None,
                     lut: None,
+                    notes: None,
                     delays,
                 }
             })
@@ -573,6 +609,74 @@ proptest! {
         let json = serde_json::to_string(&stim).unwrap();
         assert_eq!(Stimulus::parse(&json).unwrap(), stim);
     }
+}
+
+#[test]
+fn rsfq_library_cells_parse() {
+    let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../lib/families/rsfq");
+    let mut found = BTreeMap::new();
+    let entries = std::fs::read_dir(&dir).unwrap_or_else(|err| {
+        panic!("read {}: {err}", dir.display());
+    });
+    for entry in entries {
+        let path = entry.unwrap().path();
+        let Some(file_name) = path.file_name().and_then(|name| name.to_str()) else {
+            continue;
+        };
+        let Some(name) = file_name.strip_suffix(".cell.json") else {
+            continue;
+        };
+        let text = std::fs::read_to_string(&path).unwrap();
+        let cell = CellDef::parse(&text).unwrap_or_else(|err| panic!("parse {file_name}: {err}"));
+        assert_eq!(cell.name, name, "{file_name}");
+        assert_eq!(cell.family, "rsfq");
+        assert_eq!(cell.provenance, Provenance::Behavioral);
+        assert_eq!(cell.netlist, None);
+        assert_eq!(cell.lut, None);
+        assert!(cell.notes.is_some(), "{name} notes");
+        found.insert(name.to_string(), cell);
+    }
+
+    let expected = [
+        ("AND", Some(15u32)),
+        ("DCSFQ", Some(3)),
+        ("DFF", Some(7)),
+        ("JTL", Some(2)),
+        ("MERGE", Some(7)),
+        ("NDRO", Some(11)),
+        ("NOT", Some(8)),
+        ("OR", Some(12)),
+        ("SFQDC", Some(8)),
+        ("SPLIT", Some(3)),
+        ("TFF", None),
+        ("XOR", Some(11)),
+    ];
+    assert_eq!(
+        found.keys().map(String::as_str).collect::<Vec<_>>(),
+        expected.map(|(name, _)| name)
+    );
+    for (name, jj) in expected {
+        let cell = &found[name];
+        assert_eq!(cell.jj_count, jj, "{name}");
+        if name == "JTL" {
+            assert_eq!(cell.delays.get("t_a_q"), Some(&Femtos(1819)));
+            assert_eq!(cell.delays.len(), 1);
+        } else {
+            for (key, delay) in &cell.delays {
+                assert!(
+                    delay.0 == 5_000 || delay.0 == 1_000,
+                    "{name} {key} is {}",
+                    delay.0
+                );
+            }
+        }
+    }
+    assert_eq!(
+        found["TFF"].notes.as_deref(),
+        Some(
+            "No RSFQlib v3.0 source. Behavioral model of standard RSFQ TFF: 2 states, output on every second input. Placeholder delay. Not characterizable until a netlist is sourced."
+        )
+    );
 }
 
 #[test]

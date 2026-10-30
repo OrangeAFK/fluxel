@@ -1,0 +1,31 @@
+{
+  "name": "MERGE",
+  "family": "rsfq",
+  "provenance": "behavioral",
+  "ports": { "in": ["a", "b"], "out": ["q"] },
+  "faces": { "a": "W", "b": "N", "q": "E" },
+  "states": ["idle"],
+  "initial": "idle",
+  "transitions": [
+    {
+      "from": "idle",
+      "on": "a",
+      "to": "idle",
+      "fire": [{ "port": "q", "delay": "t_a_q" }]
+    },
+    {
+      "from": "idle",
+      "on": "b",
+      "to": "idle",
+      "fire": [{ "port": "q", "delay": "t_b_q" }]
+    }
+  ],
+  "constraints": [
+    { "kind": "collision", "first": "a", "then": "b", "window": "t_merge" }
+  ],
+  "jj_count": 7,
+  "netlist": null,
+  "lut": null,
+  "notes": "TODO-M2: output delays are 5000 fs and windows are 1000 fs, placeholders. Models lib/rsfqlib/RSFQlib/mitll_MERGE/THmitll_MERGE_v3p0.v. jj_count is 7, from B1-B7 in THmitll_MERGE_v3p0_base.cir.",
+  "delays": { "t_a_q": 5000, "t_b_q": 5000, "t_merge": 1000 }
+}

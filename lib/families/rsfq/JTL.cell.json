@@ -1,0 +1,23 @@
+{
+  "name": "JTL",
+  "family": "rsfq",
+  "provenance": "behavioral",
+  "ports": { "in": ["a"], "out": ["q"] },
+  "faces": { "a": "W", "q": "E" },
+  "states": ["idle"],
+  "initial": "idle",
+  "transitions": [
+    {
+      "from": "idle",
+      "on": "a",
+      "to": "idle",
+      "fire": [{ "port": "q", "delay": "t_a_q" }]
+    }
+  ],
+  "constraints": [],
+  "jj_count": 2,
+  "netlist": null,
+  "lut": null,
+  "notes": "Models lib/rsfqlib/RSFQlib/mitll_JTL/THmitll_JTL_v3p0.v. jj_count is 2, from B1 and B2 in THmitll_JTL_v3p0_base.cir. t_a_q is the measured nominal XMID B2-B1 lag, 1819 fs.",
+  "delays": { "t_a_q": 1819 }
+}

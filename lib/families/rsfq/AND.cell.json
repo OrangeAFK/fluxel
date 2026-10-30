@@ -1,0 +1,61 @@
+{
+  "name": "AND",
+  "family": "rsfq",
+  "provenance": "behavioral",
+  "ports": { "in": ["a", "b", "clk"], "out": ["q"] },
+  "faces": { "a": "W", "b": "N", "clk": "S", "q": "E" },
+  "states": ["none", "a", "b", "both"],
+  "initial": "none",
+  "transitions": [
+    { "from": "none", "on": "a", "to": "a", "fire": [] },
+    {
+      "from": "a",
+      "on": "a",
+      "to": "a",
+      "fire": [],
+      "note": "second pulse escapes"
+    },
+    { "from": "b", "on": "a", "to": "both", "fire": [] },
+    {
+      "from": "both",
+      "on": "a",
+      "to": "both",
+      "fire": [],
+      "note": "second pulse escapes"
+    },
+    { "from": "none", "on": "b", "to": "b", "fire": [] },
+    { "from": "a", "on": "b", "to": "both", "fire": [] },
+    {
+      "from": "b",
+      "on": "b",
+      "to": "b",
+      "fire": [],
+      "note": "second pulse escapes"
+    },
+    {
+      "from": "both",
+      "on": "b",
+      "to": "both",
+      "fire": [],
+      "note": "second pulse escapes"
+    },
+    { "from": "none", "on": "clk", "to": "none", "fire": [] },
+    { "from": "a", "on": "clk", "to": "none", "fire": [] },
+    { "from": "b", "on": "clk", "to": "none", "fire": [] },
+    {
+      "from": "both",
+      "on": "clk",
+      "to": "none",
+      "fire": [{ "port": "q", "delay": "t_clk_q" }]
+    }
+  ],
+  "constraints": [
+    { "kind": "hold", "first": "clk", "then": "a", "window": "t_hold_a" },
+    { "kind": "hold", "first": "clk", "then": "b", "window": "t_hold_b" }
+  ],
+  "jj_count": 15,
+  "netlist": null,
+  "lut": null,
+  "notes": "TODO-M2: output delays are 5000 fs and windows are 1000 fs, placeholders. Models lib/rsfqlib/RSFQlib/mitll_AND2/THmitll_AND2_v3p0.v. jj_count is 15, from B1-B15 in THmitll_AND2_v3p0_base.cir. TimEx has no data-to-clock setup on AND2.",
+  "delays": { "t_clk_q": 5000, "t_hold_a": 1000, "t_hold_b": 1000 }
+}

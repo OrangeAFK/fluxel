@@ -89,13 +89,18 @@ pub struct CellDef {
     pub initial: String,
     pub transitions: Vec<Transition>,
     pub constraints: Vec<Constraint>,
-    pub jj_count: u32,
+    /// Junctions in the library netlist. Absent when no netlist exists.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub jj_count: Option<u32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bias_ua: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub netlist: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lut: Option<String>,
+    /// Which library file this machine models.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notes: Option<String>,
     /// Constant femtosecond delays and windows. Only behavioral cells may set this.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub delays: BTreeMap<String, Femtos>,
@@ -120,7 +125,7 @@ pub enum CellError {
     UnfiredOutput { port: String },
     #[error("only behavioral cells may carry literal delays")]
     LiteralTiming,
-    #[error("characterized cell is missing a netlist or lut path")]
+    #[error("characterized cell is missing jj_count, netlist, or lut")]
     MissingPath,
 }
 
@@ -137,8 +142,8 @@ impl CellDef {
         if self.provenance != Provenance::Behavioral && !self.delays.is_empty() {
             return Err(CellError::LiteralTiming);
         }
-        if self.provenance != Provenance::Behavioral
-            && (!path_present(&self.netlist) || !path_present(&self.lut))
+        if self.provenance == Provenance::Characterized
+            && (self.jj_count.is_none() || !path_present(&self.netlist) || !path_present(&self.lut))
         {
             return Err(CellError::MissingPath);
         }

@@ -1,0 +1,112 @@
+JoSIM version:
+JoSIM: Josephson Junction Superconductive SPICE Circuit Simulator
+Copyright (C) 2020 by Johannes Delport (jdelport@sun.ac.za)
+v2.7.02a34ee compiled on Oct 29 2026 at 06:58:17
+
+== nominal ==
+JoSIM log:
+JoSIM: Josephson Junction Superconductive SPICE Circuit Simulator
+Copyright (C) 2020 by Johannes Delport (jdelport@sun.ac.za)
+v2.7.02a34ee compiled on Oct 29 2026 at 06:58:17
+
+Input: /mnt/c/Users/onepl/Desktop/coding/fluxel/scratch/step6/chain.cir
+
+Output: /mnt/c/Users/onepl/Desktop/coding/fluxel/scratch/step6/nominal.csv
+
+CSV header: time,"P(B1|XIN)","P(B2|XIN)","P(B1|XMID)","P(B2|XMID)","P(B1|XLOAD)","P(B2|XLOAD)"
+B1.XIN: crossings 3 vs 3 input pulses
+  t_ps: 27.258119, 77.257782, 127.257781
+  step_rad: 6.176884, 6.177480, 6.177480
+B2.XIN: crossings 3 vs 3 input pulses
+  t_ps: 29.105261, 79.104774, 129.104776
+  step_rad: 6.209817, 6.209734, 6.209736
+B1.XMID: crossings 3 vs 3 input pulses
+  t_ps: 30.921673, 80.921410, 130.921410
+  step_rad: 6.199737, 6.198465, 6.198466
+B2.XMID: crossings 3 vs 3 input pulses
+  t_ps: 32.740889, 82.740637, 132.740638
+  step_rad: 6.202564, 6.203763, 6.203756
+B1.XLOAD: crossings 3 vs 3 input pulses
+  t_ps: 34.560399, 84.560118, 134.560118
+  step_rad: 6.286852, 6.286360, 6.286359
+B2.XLOAD: crossings 3 vs 3 input pulses
+  t_ps: 36.464008, 86.463785, 136.463786
+  step_rad: 6.277967, 6.278168, 6.278167
+XMID B2-B1 lag_ps: 1.819217, 1.819227, 1.819228
+unpaired crossings: B1 0, B2 0
+
+== 0.8x ==
+JoSIM log:
+JoSIM: Josephson Junction Superconductive SPICE Circuit Simulator
+Copyright (C) 2020 by Johannes Delport (jdelport@sun.ac.za)
+v2.7.02a34ee compiled on Oct 29 2026 at 06:58:17
+
+Input: /mnt/c/Users/onepl/Desktop/coding/fluxel/scratch/step6/chain_0p8.cir
+
+Output: /mnt/c/Users/onepl/Desktop/coding/fluxel/scratch/step6/bias0p8.csv
+
+CSV header: time,"P(B1|XIN)","P(B2|XIN)","P(B1|XMID)","P(B2|XMID)","P(B1|XLOAD)","P(B2|XLOAD)"
+B1.XIN: crossings 3 vs 3 input pulses
+  t_ps: 38.263281, 88.264499, 138.264490
+  step_rad: 5.987985, 5.987619, 5.987606
+B2.XIN: crossings 3 vs 3 input pulses
+  t_ps: 40.737248, 90.738164, 140.738156
+  step_rad: 6.123298, 6.121517, 6.121517
+B1.XMID: crossings 3 vs 3 input pulses
+  t_ps: 43.208193, 93.209367, 143.209360
+  step_rad: 6.212745, 6.213567, 6.213564
+B2.XMID: crossings 3 vs 3 input pulses
+  t_ps: 45.688267, 95.689461, 145.689456
+  step_rad: 6.202942, 6.202650, 6.202644
+B1.XLOAD: crossings 3 vs 3 input pulses
+  t_ps: 48.156611, 98.157707, 148.157699
+  step_rad: 6.125145, 6.125115, 6.125114
+B2.XLOAD: crossings 3 vs 3 input pulses
+  t_ps: 50.634526, 100.635635, 150.635625
+  step_rad: 6.287055, 6.287189, 6.287186
+XMID B2-B1 lag_ps: 2.480074, 2.480095, 2.480095
+unpaired crossings: B1 0, B2 0
+
+== 1.2x ==
+JoSIM log:
+JoSIM: Josephson Junction Superconductive SPICE Circuit Simulator
+Copyright (C) 2020 by Johannes Delport (jdelport@sun.ac.za)
+v2.7.02a34ee compiled on Oct 29 2026 at 06:58:17
+
+Input: /mnt/c/Users/onepl/Desktop/coding/fluxel/scratch/step6/chain_1p2.cir
+
+Output: /mnt/c/Users/onepl/Desktop/coding/fluxel/scratch/step6/bias1p2.csv
+
+CSV header: time,"P(B1|XIN)","P(B2|XIN)","P(B1|XMID)","P(B2|XMID)","P(B1|XLOAD)","P(B2|XLOAD)"
+B1.XIN: crossings 3 vs 3 input pulses
+  t_ps: 25.494531, 75.494036, 125.494033
+  step_rad: 6.722000, 6.719124, 6.719114
+B2.XIN: crossings 3 vs 3 input pulses
+  t_ps: 26.910191, 76.909137, 126.909135
+  step_rad: 6.629330, 6.621046, 6.621052
+B1.XMID: crossings 3 vs 3 input pulses
+  t_ps: 28.315076, 78.313851, 128.313850
+  step_rad: 6.615763, 6.613210, 6.613225
+B2.XMID: crossings 3 vs 3 input pulses
+  t_ps: 29.718912, 79.717934, 129.717935
+  step_rad: 6.553196, 6.554047, 6.554046
+B1.XLOAD: crossings 3 vs 3 input pulses
+  t_ps: 31.122392, 81.121583, 131.121583
+  step_rad: 6.435037, 6.435260, 6.435264
+B2.XLOAD: crossings 3 vs 3 input pulses
+  t_ps: 32.615627, 82.614675, 132.614676
+  step_rad: 6.296481, 6.295892, 6.295885
+XMID B2-B1 lag_ps: 1.403837, 1.404083, 1.404085
+unpaired crossings: B1 0, B2 0
+
+== delay change vs nominal, XMID B2 minus B1 ==
+0.8x
+  pulse 1: lag 2.480074 ps, change 0.660857 ps
+  pulse 2: lag 2.480095 ps, change 0.660868 ps
+  pulse 3: lag 2.480095 ps, change 0.660867 ps
+  every plotted junction has 3 crossings
+1.2x
+  pulse 1: lag 1.403837 ps, change -0.415380 ps
+  pulse 2: lag 1.404083 ps, change -0.415144 ps
+  pulse 3: lag 1.404085 ps, change -0.415143 ps
+  every plotted junction has 3 crossings

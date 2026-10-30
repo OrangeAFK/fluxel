@@ -1,0 +1,14 @@
+* scratch/step6/chain.cir — exploratory, not a library file
+.include ../../lib/rsfqlib/RSFQlib/mitll_DCSFQ/THmitll_DCSFQ_v3p0_extracted.cir
+.include ../../lib/rsfqlib/RSFQlib/mitll_JTL/THmitll_JTL_v3p0_extracted.cir
+
+Iin 0 a pwl(0 0 20p 0 23p 600u 26p 0 70p 0 73p 600u 76p 0 120p 0 123p 600u 126p 0)
+XSRC  THmitll_DCSFQ a  n1
+XIN   THmitll_JTL   n1 n2
+XMID  THmitll_JTL   n2 n3
+XLOAD THmitll_JTL   n3 n4
+Rsink n4 0 2
+
+.tran 0.025p 300p 0
+.print p(B1.XIN) p(B2.XIN) p(B1.XMID) p(B2.XMID) p(B1.XLOAD) p(B2.XLOAD)
+.end

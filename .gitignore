@@ -15,3 +15,11 @@ third_party/oss-cad-suite/
 # Bytecode shipped in the unmodified RSFQlib snapshot
 !lib/rsfqlib/**/__pycache__/
 !lib/rsfqlib/**/*.pyc
+
+# JoSIM traces, logs, and bias-scaled cell copies rewritten by scratch/step6/run.py
+scratch/**/*.csv
+scratch/**/*.log
+scratch/**/dcsfq_*.cir
+scratch/**/jtl_*.cir
+scratch/**/chain_0p8.cir
+scratch/**/chain_1p2.cir

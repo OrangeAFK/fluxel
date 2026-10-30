@@ -7,3 +7,11 @@ publish.workspace = true
 
 [dependencies]
 fx-ir = { path = "../fx-ir" }
+fx-time = { path = "../fx-time" }
+thiserror.workspace = true
+serde.workspace = true
+ciborium.workspace = true
+sha2.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true

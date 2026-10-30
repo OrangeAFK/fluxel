@@ -1,0 +1,223 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "definitions": {
+    "Constraint": {
+      "additionalProperties": false,
+      "description": "A timing constraint. `window` names a LUT entry, or a `delays` key on a behavioral cell.",
+      "properties": {
+        "first": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/ConstraintKind"
+        },
+        "then": {
+          "type": "string"
+        },
+        "window": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "first",
+        "kind",
+        "then",
+        "window"
+      ],
+      "type": "object"
+    },
+    "ConstraintKind": {
+      "description": "Setup, hold, or collision window between two ports.",
+      "enum": [
+        "setup",
+        "hold",
+        "collision"
+      ],
+      "type": "string"
+    },
+    "Face": {
+      "description": "Compass and vertical faces. Serialized as `N`, `E`, `S`, `W`, `U`, `D`.",
+      "enum": [
+        "N",
+        "E",
+        "S",
+        "W",
+        "U",
+        "D"
+      ],
+      "type": "string"
+    },
+    "Fire": {
+      "additionalProperties": false,
+      "description": "One output pulse produced by a transition.",
+      "properties": {
+        "delay": {
+          "type": "string"
+        },
+        "port": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "delay",
+        "port"
+      ],
+      "type": "object"
+    },
+    "Ports": {
+      "additionalProperties": false,
+      "description": "Input and output port names.",
+      "properties": {
+        "in": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "out": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "in",
+        "out"
+      ],
+      "type": "object"
+    },
+    "Provenance": {
+      "description": "Where a cell's timing numbers come from.",
+      "enum": [
+        "characterized",
+        "self-characterized",
+        "behavioral"
+      ],
+      "type": "string"
+    },
+    "Transition": {
+      "additionalProperties": false,
+      "description": "A state-machine edge. `fire` names output ports and delay entries.",
+      "properties": {
+        "fire": {
+          "items": {
+            "$ref": "#/definitions/Fire"
+          },
+          "type": "array"
+        },
+        "from": {
+          "type": "string"
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "on": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "fire",
+        "from",
+        "on",
+        "to"
+      ],
+      "type": "object"
+    }
+  },
+  "description": "One cell's state machine, in the §3 JSON shape.",
+  "properties": {
+    "bias_ua": {
+      "format": "double",
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "constraints": {
+      "items": {
+        "$ref": "#/definitions/Constraint"
+      },
+      "type": "array"
+    },
+    "delays": {
+      "additionalProperties": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "description": "Constant femtosecond delays and windows. Only behavioral cells may set this.",
+      "type": "object"
+    },
+    "faces": {
+      "additionalProperties": {
+        "$ref": "#/definitions/Face"
+      },
+      "type": "object"
+    },
+    "family": {
+      "type": "string"
+    },
+    "initial": {
+      "type": "string"
+    },
+    "jj_count": {
+      "format": "uint32",
+      "minimum": 0.0,
+      "type": "integer"
+    },
+    "lut": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "name": {
+      "type": "string"
+    },
+    "netlist": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "ports": {
+      "$ref": "#/definitions/Ports"
+    },
+    "provenance": {
+      "$ref": "#/definitions/Provenance"
+    },
+    "states": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "transitions": {
+      "items": {
+        "$ref": "#/definitions/Transition"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "constraints",
+    "faces",
+    "family",
+    "initial",
+    "jj_count",
+    "name",
+    "ports",
+    "provenance",
+    "states",
+    "transitions"
+  ],
+  "title": "CellDef",
+  "type": "object"
+}

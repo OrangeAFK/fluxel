@@ -1,0 +1,215 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "definitions": {
+    "Instance": {
+      "additionalProperties": false,
+      "description": "One placed cell.",
+      "properties": {
+        "bias_domain": {
+          "type": "string"
+        },
+        "cell": {
+          "type": "string"
+        },
+        "family": {
+          "type": "string"
+        },
+        "macro_parent": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "bias_domain",
+        "cell",
+        "family"
+      ],
+      "type": "object"
+    },
+    "Net": {
+      "additionalProperties": false,
+      "description": "A single driver-to-sink connection. Fanout greater than one is two nets, and [`Design::parse`] rejects it.",
+      "properties": {
+        "driver": {
+          "$ref": "#/definitions/PinRef"
+        },
+        "sink": {
+          "$ref": "#/definitions/PinRef"
+        },
+        "wire": {
+          "$ref": "#/definitions/Wire"
+        }
+      },
+      "required": [
+        "driver",
+        "sink",
+        "wire"
+      ],
+      "type": "object"
+    },
+    "PinRef": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "instance": {
+              "type": "string"
+            },
+            "port": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "instance",
+            "port"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "port": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "port"
+          ],
+          "type": "object"
+        }
+      ],
+      "description": "An instance pin, or a port on the design itself."
+    },
+    "Ports": {
+      "additionalProperties": false,
+      "description": "Input and output port names.",
+      "properties": {
+        "in": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "out": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "in",
+        "out"
+      ],
+      "type": "object"
+    },
+    "Wire": {
+      "description": "How a net is wired. Delays come from interconnect characterization, not from this value.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "direct"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "jtl"
+              ],
+              "type": "string"
+            },
+            "stages": {
+              "format": "uint32",
+              "minimum": 0.0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "kind",
+            "stages"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "ptl"
+              ],
+              "type": "string"
+            },
+            "length_units": {
+              "format": "uint32",
+              "minimum": 0.0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "kind",
+            "length_units"
+          ],
+          "type": "object"
+        }
+      ]
+    }
+  },
+  "description": "A fanout-1 netlist.",
+  "properties": {
+    "bias_domains": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "clock_domains": {
+      "additionalProperties": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "type": "object"
+    },
+    "instances": {
+      "additionalProperties": {
+        "$ref": "#/definitions/Instance"
+      },
+      "type": "object"
+    },
+    "nets": {
+      "items": {
+        "$ref": "#/definitions/Net"
+      },
+      "type": "array"
+    },
+    "ports": {
+      "$ref": "#/definitions/Ports"
+    }
+  },
+  "required": [
+    "bias_domains",
+    "clock_domains",
+    "instances",
+    "nets",
+    "ports"
+  ],
+  "title": "Design",
+  "type": "object"
+}

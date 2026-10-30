@@ -1,0 +1,19 @@
+# Nominal DCSFQ–JTL–JTL–JTL chain, scratch/step6/chain.cir.
+# Reference junctions from DECISIONS.md: THmitll_JTL port a is B1 and port q is
+# B2, on the middle instance XMID.
+timestep_ps: 0.025
+stop_ps: 300
+ports:
+  a: P(B1|XMID)
+  q: P(B2|XMID)
+pwl:
+  - {t_ps: 0, uA: 0}
+  - {t_ps: 20, uA: 0}
+  - {t_ps: 23, uA: 600}
+  - {t_ps: 26, uA: 0}
+  - {t_ps: 70, uA: 0}
+  - {t_ps: 73, uA: 600}
+  - {t_ps: 76, uA: 0}
+  - {t_ps: 120, uA: 0}
+  - {t_ps: 123, uA: 600}
+  - {t_ps: 126, uA: 0}

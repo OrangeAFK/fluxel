@@ -1,6 +1,6 @@
 # Golden suite
 
-This directory is empty. It will hold JoSIM reference runs.
+This directory holds JoSIM reference runs.
 
 Entries are generated only by `tools/char/golden.py`. Do not edit them by hand.
 

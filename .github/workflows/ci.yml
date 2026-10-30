@@ -24,8 +24,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install pytest
-        run: pip install pytest
+      - name: Install pytest and hypothesis
+        run: pip install pytest hypothesis
 
       - name: cargo fmt
         run: cargo fmt --check

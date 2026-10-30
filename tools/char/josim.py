@@ -41,6 +41,22 @@ class JosimOutputError(JosimError):
         super().__init__("JoSIM CSV is missing " + ", ".join(missing))
 
 
+def version() -> str:
+    """Return the ``josim-cli -v`` banner."""
+    proc = subprocess.run(
+        ["josim-cli", "-v"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    text = ((proc.stdout or "") + (proc.stderr or "")).strip()
+    if proc.returncode != 0:
+        raise JosimFailed(proc.returncode, text)
+    return text
+
+
 def run(
     netlist: Path,
     *,
@@ -54,7 +70,7 @@ def run(
     ``.include`` paths resolve. ``columns`` selects signal names in that order;
     omitted, every signal column is returned.
     """
-    netlist = Path(netlist)
+    netlist = Path(netlist).resolve()
     with tempfile.TemporaryDirectory() as tmp:
         csv_path = Path(tmp) / "output.csv"
         try:

@@ -224,9 +224,15 @@ name = "fx-cli"
 version = "0.0.0"
 dependencies = [
  "fx-flow",
+ "fx-ir",
+ "fx-kernel",
  "fx-sta",
  "fx-stat",
+ "fx-time",
  "fx-world",
+ "serde_json",
+ "sha2",
+ "thiserror",
 ]
 
 [[package]]

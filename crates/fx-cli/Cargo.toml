@@ -10,3 +10,12 @@ fx-sta = { path = "../fx-sta" }
 fx-stat = { path = "../fx-stat" }
 fx-flow = { path = "../fx-flow" }
 fx-world = { path = "../fx-world" }
+fx-kernel = { path = "../fx-kernel" }
+fx-ir = { path = "../fx-ir" }
+fx-time = { path = "../fx-time" }
+thiserror.workspace = true
+sha2.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+sha2.workspace = true

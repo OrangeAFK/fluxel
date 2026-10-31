@@ -113,6 +113,49 @@ fn tff_counts() -> BTreeMap<String, usize> {
     expect_map(&[("t0.q", 4), ("t1.q", 2)])
 }
 
+#[test]
+fn tff_divider_pulse_times() {
+    // TFF starts clear. t_a_q is 5000 fs and every wire is direct (delay 0).
+    // clear + a -> set, and emits nothing. set + a -> clear, and q is at t + 5000.
+    // in: 0, 20000, 40000, 60000, 80000, 100000, 120000, 140000.
+    // t0 emits on the 2nd, 4th, 6th, and 8th inputs:
+    //   20000 + 5000 = 25000
+    //   60000 + 5000 = 65000
+    //   100000 + 5000 = 105000
+    //   140000 + 5000 = 145000
+    // t1 starts clear and sees those four pulses, so it emits on its 2nd and 4th:
+    //   65000 + 5000 = 70000
+    //   145000 + 5000 = 150000
+    let tmp = PathBuf::from(env!("CARGO_TARGET_TMPDIR"));
+    let dir = repo_root().join("examples/tff_divider");
+    let out = tmp.join("tff_times_pulses.json");
+    let log = tmp.join("tff_times_events.cbor");
+    let output = sim(
+        &dir.join("design.json"),
+        &dir.join("stimulus.json"),
+        &out,
+        &log,
+        None,
+        false,
+    );
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let pulses: BTreeMap<String, Vec<i64>> =
+        serde_json::from_str(&std::fs::read_to_string(&out).expect("read pulses"))
+            .expect("pulse json");
+    let expected: BTreeMap<String, Vec<i64>> = [
+        ("t0.q".to_string(), vec![25000, 65000, 105000, 145000]),
+        ("t1.q".to_string(), vec![70000, 150000]),
+    ]
+    .into_iter()
+    .collect();
+    assert_eq!(pulses, expected);
+}
+
 fn assert_clean(output: &Output, out: &Path, log: &Path, expected: &BTreeMap<String, usize>) {
     assert_eq!(
         output.status.code(),

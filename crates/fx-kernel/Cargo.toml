@@ -15,3 +15,8 @@ sha2.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true
+criterion = "0.5"
+
+[[bench]]
+name = "clocked_10k"
+harness = false

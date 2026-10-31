@@ -44,3 +44,22 @@ jobs:
 
       - name: golden manifest
         run: python scripts/check_manifest.py
+
+  event-log-hashes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build fx-cli
+        run: cargo build -p fx-cli
+
+      - name: Event-log hashes
+        run: python scripts/event_hashes.py

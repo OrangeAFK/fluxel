@@ -5,20 +5,31 @@ import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 
 from compare import format_view, functional_view, ps_to_fs
-from design_to_pylse import UnknownCell, to_pylse_source
+from design_to_pylse import UnknownCell, skip_reason, to_pylse_source
 from generate import SEED, generate_cases
 
 MARKER = "FX_ORACLE_JSON"
 
 
+class Status(Enum):
+    MATCH = "yes"
+    MISMATCH = "no"
+    SKIPPED = "skip"
+
+
 @dataclass
 class Row:
-    match: bool
+    status: Status
     report: str
     traces: str
+
+    @property
+    def match(self) -> bool:
+        return self.status is Status.MATCH
 
 
 def ensure_fx_cli(root: Path) -> Path:
@@ -41,6 +52,11 @@ def evaluate(
     fx_bin: Path,
     lib_dir: Path,
 ) -> Row:
+    reason = skip_reason(design)
+    if reason is not None:
+        report = f"{name} | SKIPPED | {reason} | skip"
+        return Row(Status.SKIPPED, report, "")
+
     fx_pulses, fx_error = _run_fx(design, stimulus, fx_bin, lib_dir)
     try:
         source = to_pylse_source(design, stimulus)
@@ -48,27 +64,26 @@ def evaluate(
         fx_text = fx_error if fx_error is not None else _view_text(design, stimulus, fx_pulses)
         report = f"{name} | {fx_text} | no built-in for {err.cell} | no"
         traces = _traces(fx_pulses, {}, f"no built-in for {err.cell}")
-        return Row(False, report, traces)
+        return Row(Status.MISMATCH, report, traces)
 
     if fx_error is not None:
         report = f"{name} | {fx_error} | | no"
-        return Row(False, report, _traces(fx_pulses, {}, fx_error))
+        return Row(Status.MISMATCH, report, _traces(fx_pulses, {}, fx_error))
 
     pylse_pulses, pylse_error = _run_pylse(source)
     if pylse_error is not None:
         fx_text = _view_text(design, stimulus, fx_pulses)
         report = f"{name} | {fx_text} | {pylse_error} | no"
-        return Row(False, report, _traces(fx_pulses, pylse_pulses, pylse_error))
+        return Row(Status.MISMATCH, report, _traces(fx_pulses, pylse_pulses, pylse_error))
 
     fx_view = functional_view(design, stimulus, fx_pulses)
     pylse_view = functional_view(design, stimulus, pylse_pulses)
-    matched = fx_view == pylse_view
+    status = Status.MATCH if fx_view == pylse_view else Status.MISMATCH
     fx_text = format_view(*fx_view)
     pylse_text = format_view(*pylse_view)
-    flag = "yes" if matched else "no"
-    report = f"{name} | {fx_text} | {pylse_text} | {flag}"
-    traces = "" if matched else _traces(fx_pulses, pylse_pulses, None)
-    return Row(matched, report, traces)
+    report = f"{name} | {fx_text} | {pylse_text} | {status.value}"
+    traces = "" if status is Status.MATCH else _traces(fx_pulses, pylse_pulses, None)
+    return Row(status, report, traces)
 
 
 def main() -> int:
@@ -86,7 +101,7 @@ def main() -> int:
     for name, design, stimulus in cases:
         row = evaluate(name, design, stimulus, fx_bin, lib)
         print(row.report, flush=True)
-        if not row.match:
+        if row.status is Status.MISMATCH:
             print(row.traces, flush=True)
             return 1
     return 0

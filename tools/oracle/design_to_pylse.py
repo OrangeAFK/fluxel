@@ -21,6 +21,34 @@ CELLS: dict[str, tuple[str, tuple[str, ...], tuple[str, ...]]] = {
 
 CLOCKED = frozenset({"DFF", "AND", "OR", "XOR", "NOT"})
 
+# M1 library cells with no PyLSE built-in. Designs that use one are skipped.
+UNSUPPORTED = frozenset({"DCSFQ", "NDRO", "SFQDC", "TFF"})
+
+
+def skip_reason(design: dict) -> str | None:
+    """Why this design is not graded, or None when PyLSE should run.
+
+    A cell in neither ``CELLS`` nor ``UNSUPPORTED`` is not a skip: the caller
+    reports that as a mismatch.
+    """
+    unknown: list[str] = []
+    unsupported: list[str] = []
+    for instance in design["instances"].values():
+        cell = instance["cell"]
+        if cell in CELLS:
+            continue
+        if cell in UNSUPPORTED:
+            if cell not in unsupported:
+                unsupported.append(cell)
+        elif cell not in unknown:
+            unknown.append(cell)
+    if unknown or not unsupported:
+        return None
+    unsupported.sort()
+    if len(unsupported) == 1:
+        return f"unsupported cell {unsupported[0]}"
+    return "unsupported cells " + ", ".join(unsupported)
+
 
 class UnknownCell(Exception):
     """The design uses a cell PyLSE does not provide as a built-in."""

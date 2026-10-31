@@ -400,6 +400,51 @@ fn fanout_rejected() {
     );
 }
 
+fn fanout_netlist(n_sinks: usize) -> String {
+    let mut instances = serde_json::Map::new();
+    instances.insert(
+        "src".to_string(),
+        json!({"family": "rsfq", "cell": "BUF", "bias_domain": "b"}),
+    );
+    let mut nets = Vec::new();
+    for index in 0..n_sinks {
+        let name = format!("s{index}");
+        instances.insert(
+            name.clone(),
+            json!({"family": "rsfq", "cell": "BUF", "bias_domain": "b"}),
+        );
+        nets.push(json!({
+            "driver": {"instance": "src", "port": "q"},
+            "sink": {"instance": name, "port": "a"},
+            "wire": {"kind": "direct"}
+        }));
+    }
+    json!({
+        "instances": Value::Object(instances),
+        "nets": nets,
+        "ports": {"in": [], "out": []},
+        "clock_domains": {},
+        "bias_domains": ["b"]
+    })
+    .to_string()
+}
+
+proptest! {
+    #[test]
+    fn prop_fanout_rejected(n_sinks in 2usize..=8) {
+        let err = Design::parse(&fanout_netlist(n_sinks)).unwrap_err();
+        assert_eq!(
+            err,
+            DesignError::Fanout {
+                driver: PinRef::Instance {
+                    instance: "src".into(),
+                    port: "q".into(),
+                },
+            }
+        );
+    }
+}
+
 #[test]
 fn multiple_drivers_rejected() {
     let nets = json!([

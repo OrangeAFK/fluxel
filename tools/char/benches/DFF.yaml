@@ -7,3 +7,45 @@ length_ps: 1200
 inputs:
   a: [100, 500]
   clk: [200, 350, 650]
+anchor_fs: 200000
+lead_fs: 50000
+resolution_fs: 10
+windows:
+  # Data before clock. Pass: one q, strictly after clk.
+  - name: t_setup
+    lo_fs: -100000
+    hi_fs: 200000
+    stimulus:
+      a: ["anchor"]
+      clk: ["anchor + offset"]
+    pass:
+      - {kind: count, port: a, n: 1}
+      - {kind: count, port: clk, n: 1}
+      - {kind: count, port: q, n: 1}
+      - {kind: after, port: q, ref: clk}
+  # Data after clock. Pass: both clocks read, and the first q lands before the second a.
+  - name: t_hold
+    lo_fs: 6000
+    hi_fs: 200000
+    stimulus:
+      a: ["anchor", "anchor + lead + offset"]
+      clk: ["anchor + lead", "anchor + lead + offset + lead"]
+    pass:
+      - {kind: count, port: a, n: 2}
+      - {kind: count, port: clk, n: 2}
+      - {kind: count, port: q, n: 2}
+      - {kind: paired, port: q, ref: clk}
+      - {kind: before, port: q, index: 0, ref: a, ref_index: 1}
+  # Two read cycles, data-to-data separation offset, each a leading its clk by lead.
+  - name: dt_min
+    lo_fs: 56000
+    hi_fs: 400000
+    stimulus:
+      a: ["anchor", "anchor + offset"]
+      clk: ["anchor + lead", "anchor + offset + lead"]
+    pass:
+      - {kind: count, port: a, n: 2}
+      - {kind: count, port: clk, n: 2}
+      - {kind: count, port: q, n: 2}
+      - {kind: paired, port: q, ref: clk}
+      - {kind: before, port: q, index: 0, ref: a, ref_index: 1}

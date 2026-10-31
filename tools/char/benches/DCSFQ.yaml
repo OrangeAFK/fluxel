@@ -6,3 +6,17 @@ timestep_ps: 0.025
 length_ps: 1200
 inputs:
   a: [100, 300]
+anchor_fs: 200000
+lead_fs: 50000
+resolution_fs: 10
+windows:
+  # Two input pulses. Pass: two q, each closer to its own a than to the other a.
+  - name: dt_min
+    lo_fs: 6000
+    hi_fs: 400000
+    stimulus:
+      a: ["anchor", "anchor + offset"]
+    pass:
+      - {kind: count, port: a, n: 2}
+      - {kind: count, port: q, n: 2}
+      - {kind: nearer, port: q, ref: a}

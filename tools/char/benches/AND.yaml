@@ -8,3 +8,78 @@ inputs:
   a: [100, 400]
   b: [450]
   clk: [200, 550, 800]
+anchor_fs: 200000
+lead_fs: 50000
+resolution_fs: 10
+windows:
+  # b settled, a leads clk by offset. Pass: one q strictly after clk.
+  - name: t_setup_a
+    lo_fs: -100000
+    hi_fs: 200000
+    stimulus:
+      a: ["anchor + lead"]
+      b: ["anchor"]
+      clk: ["anchor + lead + offset"]
+    pass:
+      - {kind: count, port: a, n: 1}
+      - {kind: count, port: b, n: 1}
+      - {kind: count, port: clk, n: 1}
+      - {kind: count, port: q, n: 1}
+      - {kind: after, port: q, ref: clk}
+  # a settled, b leads clk by offset. Pass: one q strictly after clk.
+  - name: t_setup_b
+    lo_fs: -100000
+    hi_fs: 200000
+    stimulus:
+      a: ["anchor"]
+      b: ["anchor + lead"]
+      clk: ["anchor + lead + offset"]
+    pass:
+      - {kind: count, port: a, n: 1}
+      - {kind: count, port: b, n: 1}
+      - {kind: count, port: clk, n: 1}
+      - {kind: count, port: q, n: 1}
+      - {kind: after, port: q, ref: clk}
+  # Bare clock, a after it, b settled, second clock. Pass: one q after the second clk.
+  - name: t_hold_a
+    lo_fs: 6000
+    hi_fs: 200000
+    stimulus:
+      a: ["anchor + offset"]
+      b: ["anchor + offset + lead"]
+      clk: ["anchor", "anchor + offset + lead + lead"]
+    pass:
+      - {kind: count, port: a, n: 1}
+      - {kind: count, port: b, n: 1}
+      - {kind: count, port: clk, n: 2}
+      - {kind: count, port: q, n: 1}
+      - {kind: after, port: q, ref: clk, ref_index: 1}
+  # Bare clock, b after it, a settled, second clock. Pass: one q after the second clk.
+  - name: t_hold_b
+    lo_fs: 6000
+    hi_fs: 200000
+    stimulus:
+      b: ["anchor + offset"]
+      a: ["anchor + offset + lead"]
+      clk: ["anchor", "anchor + offset + lead + lead"]
+    pass:
+      - {kind: count, port: b, n: 1}
+      - {kind: count, port: a, n: 1}
+      - {kind: count, port: clk, n: 2}
+      - {kind: count, port: q, n: 1}
+      - {kind: after, port: q, ref: clk, ref_index: 1}
+  # Two AND cycles, both data at the cycle start, clock one lead later, cycles offset apart.
+  - name: dt_min
+    lo_fs: 56000
+    hi_fs: 400000
+    stimulus:
+      a: ["anchor", "anchor + offset"]
+      b: ["anchor", "anchor + offset"]
+      clk: ["anchor + lead", "anchor + offset + lead"]
+    pass:
+      - {kind: count, port: a, n: 2}
+      - {kind: count, port: b, n: 2}
+      - {kind: count, port: clk, n: 2}
+      - {kind: count, port: q, n: 2}
+      - {kind: paired, port: q, ref: clk}
+      - {kind: before, port: q, index: 0, ref: a, ref_index: 1}

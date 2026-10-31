@@ -7,3 +7,42 @@ length_ps: 1200
 inputs:
   a: [250]
   clk: [100, 400, 600]
+anchor_fs: 200000
+lead_fs: 50000
+resolution_fs: 10
+windows:
+  # a before clk. Pass: clk is inhibited, so q is absent.
+  - name: t_setup
+    lo_fs: -100000
+    hi_fs: 200000
+    stimulus:
+      a: ["anchor"]
+      clk: ["anchor + offset"]
+    pass:
+      - {kind: count, port: a, n: 1}
+      - {kind: count, port: clk, n: 1}
+      - {kind: count, port: q, n: 0}
+  # clk, then a. Pass: one q strictly between clk and a.
+  - name: t_hold
+    lo_fs: 6000
+    hi_fs: 200000
+    stimulus:
+      clk: ["anchor"]
+      a: ["anchor + offset"]
+    pass:
+      - {kind: count, port: clk, n: 1}
+      - {kind: count, port: a, n: 1}
+      - {kind: count, port: q, n: 1}
+      - {kind: between, port: q, earlier: clk, later: a}
+  # Two bare clocks, offset apart. Pass: q fires twice, each inside its clock gap.
+  - name: dt_min
+    lo_fs: 6000
+    hi_fs: 400000
+    stimulus:
+      a: []
+      clk: ["anchor", "anchor + offset"]
+    pass:
+      - {kind: count, port: a, n: 0}
+      - {kind: count, port: clk, n: 2}
+      - {kind: count, port: q, n: 2}
+      - {kind: paired, port: q, ref: clk}

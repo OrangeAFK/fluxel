@@ -8,3 +8,78 @@ inputs:
   a: [200]
   b: [550]
   clk: [100, 350, 480, 700]
+anchor_fs: 200000
+lead_fs: 50000
+resolution_fs: 10
+windows:
+  # Set then clock. Pass: one q strictly after clk. b stays quiet.
+  - name: t_setup_a
+    lo_fs: -100000
+    hi_fs: 200000
+    stimulus:
+      a: ["anchor"]
+      b: []
+      clk: ["anchor + offset"]
+    pass:
+      - {kind: count, port: a, n: 1}
+      - {kind: count, port: b, n: 0}
+      - {kind: count, port: clk, n: 1}
+      - {kind: count, port: q, n: 1}
+      - {kind: after, port: q, ref: clk}
+  # Set, then reset, then clock. Pass: no q. An output means the reset missed the clock.
+  - name: t_setup_b
+    lo_fs: -100000
+    hi_fs: 200000
+    stimulus:
+      a: ["anchor"]
+      b: ["anchor + lead"]
+      clk: ["anchor + lead + offset"]
+    pass:
+      - {kind: count, port: a, n: 1}
+      - {kind: count, port: b, n: 1}
+      - {kind: count, port: clk, n: 1}
+      - {kind: count, port: q, n: 0}
+  # Set, read, second a after the clock, second read. Pass: two q, first q before the second a.
+  - name: t_hold_a
+    lo_fs: 6000
+    hi_fs: 200000
+    stimulus:
+      a: ["anchor", "anchor + lead + offset"]
+      b: []
+      clk: ["anchor + lead", "anchor + lead + offset + lead"]
+    pass:
+      - {kind: count, port: a, n: 2}
+      - {kind: count, port: b, n: 0}
+      - {kind: count, port: clk, n: 2}
+      - {kind: count, port: q, n: 2}
+      - {kind: paired, port: q, ref: clk}
+      - {kind: before, port: q, index: 0, ref: a, ref_index: 1}
+  # Set, read, b after the clock, second read. Pass: one q between the first clk and b.
+  # A second q means the reset was lost. Zero q means the first read was destroyed.
+  - name: t_hold_b
+    lo_fs: 6000
+    hi_fs: 200000
+    stimulus:
+      a: ["anchor"]
+      b: ["anchor + lead + offset"]
+      clk: ["anchor + lead", "anchor + lead + offset + lead"]
+    pass:
+      - {kind: count, port: a, n: 1}
+      - {kind: count, port: b, n: 1}
+      - {kind: count, port: clk, n: 2}
+      - {kind: count, port: q, n: 1}
+      - {kind: between, port: q, earlier: clk, later: b}
+  # One set, then two clocks offset apart. Pass: q fires twice, each inside its clock gap.
+  - name: dt_min
+    lo_fs: 6000
+    hi_fs: 400000
+    stimulus:
+      a: ["anchor"]
+      b: []
+      clk: ["anchor + lead", "anchor + lead + offset"]
+    pass:
+      - {kind: count, port: a, n: 1}
+      - {kind: count, port: b, n: 0}
+      - {kind: count, port: clk, n: 2}
+      - {kind: count, port: q, n: 2}
+      - {kind: paired, port: q, ref: clk}

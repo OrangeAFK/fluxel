@@ -7,3 +7,48 @@ length_ps: 1200
 inputs:
   a: [100, 400]
   b: [250]
+anchor_fs: 200000
+lead_fs: 50000
+resolution_fs: 10
+windows:
+  # b follows a by offset. Pass: two q pulses, the first between a and b, the second after b.
+  # Below this offset the two inputs become one output.
+  - name: t_merge_ab
+    lo_fs: 0
+    hi_fs: 200000
+    stimulus:
+      a: ["anchor"]
+      b: ["anchor + offset"]
+    pass:
+      - {kind: count, port: a, n: 1}
+      - {kind: count, port: b, n: 1}
+      - {kind: count, port: q, n: 2}
+      - {kind: after, port: q, index: 0, ref: a, ref_index: 0}
+      - {kind: before, port: q, index: 0, ref: b, ref_index: 0}
+      - {kind: after, port: q, index: 1, ref: b, ref_index: 0}
+  # a follows b by offset. Same two-pulse rule with the ports swapped.
+  - name: t_merge_ba
+    lo_fs: 0
+    hi_fs: 200000
+    stimulus:
+      b: ["anchor"]
+      a: ["anchor + offset"]
+    pass:
+      - {kind: count, port: b, n: 1}
+      - {kind: count, port: a, n: 1}
+      - {kind: count, port: q, n: 2}
+      - {kind: after, port: q, index: 0, ref: b, ref_index: 0}
+      - {kind: before, port: q, index: 0, ref: a, ref_index: 0}
+      - {kind: after, port: q, index: 1, ref: a, ref_index: 0}
+  # Two pulses on a, b quiet. Pass: q fires twice, each inside its input gap.
+  - name: dt_min
+    lo_fs: 6000
+    hi_fs: 400000
+    stimulus:
+      a: ["anchor", "anchor + offset"]
+      b: []
+    pass:
+      - {kind: count, port: a, n: 2}
+      - {kind: count, port: b, n: 0}
+      - {kind: count, port: q, n: 2}
+      - {kind: paired, port: q, ref: a}

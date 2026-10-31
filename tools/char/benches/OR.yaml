@@ -8,3 +8,78 @@ inputs:
   a: [200]
   b: [500]
   clk: [100, 350, 650]
+anchor_fs: 200000
+lead_fs: 50000
+resolution_fs: 10
+windows:
+  # Only a, clk follows by offset. Pass: one q strictly after clk.
+  - name: t_setup_a
+    lo_fs: -100000
+    hi_fs: 200000
+    stimulus:
+      a: ["anchor"]
+      b: []
+      clk: ["anchor + offset"]
+    pass:
+      - {kind: count, port: a, n: 1}
+      - {kind: count, port: b, n: 0}
+      - {kind: count, port: clk, n: 1}
+      - {kind: count, port: q, n: 1}
+      - {kind: after, port: q, ref: clk}
+  # Only b, clk follows by offset. Pass: one q strictly after clk.
+  - name: t_setup_b
+    lo_fs: -100000
+    hi_fs: 200000
+    stimulus:
+      b: ["anchor"]
+      a: []
+      clk: ["anchor + offset"]
+    pass:
+      - {kind: count, port: b, n: 1}
+      - {kind: count, port: a, n: 0}
+      - {kind: count, port: clk, n: 1}
+      - {kind: count, port: q, n: 1}
+      - {kind: after, port: q, ref: clk}
+  # Bare clock, a after it, second clock. Pass: one q after the second clk.
+  - name: t_hold_a
+    lo_fs: 6000
+    hi_fs: 200000
+    stimulus:
+      a: ["anchor + offset"]
+      b: []
+      clk: ["anchor", "anchor + offset + lead"]
+    pass:
+      - {kind: count, port: a, n: 1}
+      - {kind: count, port: b, n: 0}
+      - {kind: count, port: clk, n: 2}
+      - {kind: count, port: q, n: 1}
+      - {kind: after, port: q, ref: clk, ref_index: 1}
+  # Bare clock, b after it, second clock. Pass: one q after the second clk.
+  - name: t_hold_b
+    lo_fs: 6000
+    hi_fs: 200000
+    stimulus:
+      b: ["anchor + offset"]
+      a: []
+      clk: ["anchor", "anchor + offset + lead"]
+    pass:
+      - {kind: count, port: b, n: 1}
+      - {kind: count, port: a, n: 0}
+      - {kind: count, port: clk, n: 2}
+      - {kind: count, port: q, n: 1}
+      - {kind: after, port: q, ref: clk, ref_index: 1}
+  # Two a-then-clk cycles, data-to-data separation offset. b stays quiet.
+  - name: dt_min
+    lo_fs: 56000
+    hi_fs: 400000
+    stimulus:
+      a: ["anchor", "anchor + offset"]
+      b: []
+      clk: ["anchor + lead", "anchor + offset + lead"]
+    pass:
+      - {kind: count, port: a, n: 2}
+      - {kind: count, port: b, n: 0}
+      - {kind: count, port: clk, n: 2}
+      - {kind: count, port: q, n: 2}
+      - {kind: paired, port: q, ref: clk}
+      - {kind: before, port: q, index: 0, ref: a, ref_index: 1}

@@ -12,7 +12,7 @@ anchor_fs: 200000
 lead_fs: 50000
 resolution_fs: 10
 windows:
-  # b settled, a leads clk by offset. Pass: one q strictly after clk.
+  # b settled, a leads clk by offset. Pass: one q after the first clk.
   - name: t_setup_a
     lo_fs: -100000
     hi_fs: 200000
@@ -20,13 +20,15 @@ windows:
       a: ["anchor + lead"]
       b: ["anchor"]
       clk: ["anchor + lead + offset"]
+    arrive:
+      - {port: a, n: 1}
+      - {port: b, n: 1}
+      - {port: clk, n: 1}
     pass:
-      - {kind: count, port: a, n: 1}
-      - {kind: count, port: b, n: 1}
-      - {kind: count, port: clk, n: 1}
       - {kind: count, port: q, n: 1}
-      - {kind: after, port: q, ref: clk}
-  # a settled, b leads clk by offset. Pass: one q strictly after clk.
+      - {kind: after, port: q, ref: clk, ref_index: 0}
+    measure: {kind: gap, later: clk, earlier: a}
+  # a settled, b leads clk by offset. Pass: one q after the first clk.
   - name: t_setup_b
     lo_fs: -100000
     hi_fs: 200000
@@ -34,40 +36,46 @@ windows:
       a: ["anchor"]
       b: ["anchor + lead"]
       clk: ["anchor + lead + offset"]
+    arrive:
+      - {port: a, n: 1}
+      - {port: b, n: 1}
+      - {port: clk, n: 1}
     pass:
-      - {kind: count, port: a, n: 1}
-      - {kind: count, port: b, n: 1}
-      - {kind: count, port: clk, n: 1}
       - {kind: count, port: q, n: 1}
-      - {kind: after, port: q, ref: clk}
-  # Bare clock, a after it, b settled, second clock. Pass: one q after the second clk.
+      - {kind: after, port: q, ref: clk, ref_index: 0}
+    measure: {kind: gap, later: clk, earlier: b}
+  # Bare clock, a after it, b settled, second clock. Pass: one q after b.
   - name: t_hold_a
-    lo_fs: 6000
+    lo_fs: -100000
     hi_fs: 200000
     stimulus:
       a: ["anchor + offset"]
       b: ["anchor + offset + lead"]
       clk: ["anchor", "anchor + offset + lead + lead"]
+    arrive:
+      - {port: a, n: 1}
+      - {port: b, n: 1}
+      - {port: clk, n: 1}
     pass:
-      - {kind: count, port: a, n: 1}
-      - {kind: count, port: b, n: 1}
-      - {kind: count, port: clk, n: 2}
       - {kind: count, port: q, n: 1}
-      - {kind: after, port: q, ref: clk, ref_index: 1}
-  # Bare clock, b after it, a settled, second clock. Pass: one q after the second clk.
+      - {kind: after, port: q, ref: b, ref_index: 0}
+    measure: {kind: gap, later: a, earlier: clk, earlier_index: 0}
+  # Bare clock, b after it, a settled, second clock. Pass: one q after a.
   - name: t_hold_b
-    lo_fs: 6000
+    lo_fs: -100000
     hi_fs: 200000
     stimulus:
       b: ["anchor + offset"]
       a: ["anchor + offset + lead"]
       clk: ["anchor", "anchor + offset + lead + lead"]
+    arrive:
+      - {port: a, n: 1}
+      - {port: b, n: 1}
+      - {port: clk, n: 1}
     pass:
-      - {kind: count, port: b, n: 1}
-      - {kind: count, port: a, n: 1}
-      - {kind: count, port: clk, n: 2}
       - {kind: count, port: q, n: 1}
-      - {kind: after, port: q, ref: clk, ref_index: 1}
+      - {kind: after, port: q, ref: a, ref_index: 0}
+    measure: {kind: gap, later: b, earlier: clk, earlier_index: 0}
   # Two AND cycles, both data at the cycle start, clock one lead later, cycles offset apart.
   - name: dt_min
     lo_fs: 56000

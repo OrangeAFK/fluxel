@@ -19,13 +19,15 @@ windows:
     stimulus:
       a: ["anchor"]
       b: ["anchor + offset"]
+    arrive:
+      - {port: a, n: 1}
+      - {port: b, n: 1}
     pass:
-      - {kind: count, port: a, n: 1}
-      - {kind: count, port: b, n: 1}
       - {kind: count, port: q, n: 2}
       - {kind: after, port: q, index: 0, ref: a, ref_index: 0}
       - {kind: before, port: q, index: 0, ref: b, ref_index: 0}
       - {kind: after, port: q, index: 1, ref: b, ref_index: 0}
+    measure: {kind: gap, later: b, earlier: a}
   # a follows b by offset. Same two-pulse rule with the ports swapped.
   - name: t_merge_ba
     lo_fs: 0
@@ -33,13 +35,15 @@ windows:
     stimulus:
       b: ["anchor"]
       a: ["anchor + offset"]
+    arrive:
+      - {port: b, n: 1}
+      - {port: a, n: 1}
     pass:
-      - {kind: count, port: b, n: 1}
-      - {kind: count, port: a, n: 1}
       - {kind: count, port: q, n: 2}
       - {kind: after, port: q, index: 0, ref: b, ref_index: 0}
       - {kind: before, port: q, index: 0, ref: a, ref_index: 0}
       - {kind: after, port: q, index: 1, ref: a, ref_index: 0}
+    measure: {kind: gap, later: a, earlier: b}
   # Two pulses on a, b quiet. Pass: q fires twice, each inside its input gap.
   - name: dt_min
     lo_fs: 6000

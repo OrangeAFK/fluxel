@@ -8,8 +8,12 @@ import yaml
 
 from windows import (
     WindowError,
+    apply_measurement,
     bisect,
+    inputs_arrived,
     judge,
+    junction_gap,
+    legal_lo,
     review,
     schedule,
     write_setup_hold_plot,
@@ -22,14 +26,45 @@ BENCHES = ROOT / "tools" / "char" / "benches"
 HEADER = {"anchor_fs": 200_000, "lead_fs": 50_000, "resolution_fs": 10}
 
 
-def _window(name: str, lo: int, hi: int, stimulus: dict, passes: list) -> dict:
-    return {
+def _window(
+    name: str,
+    lo: int,
+    hi: int,
+    stimulus: dict,
+    passes: list,
+    arrive: list | None = None,
+    measure: dict | None = None,
+) -> dict:
+    row = {
         "name": name,
         "lo_fs": lo,
         "hi_fs": hi,
         "stimulus": stimulus,
         "pass": passes,
     }
+    if arrive is not None:
+        row["arrive"] = arrive
+    if measure is not None:
+        row["measure"] = measure
+    return row
+
+
+def _arrive(*ports: str) -> list:
+    return [{"port": port, "n": 1} for port in ports]
+
+
+def _gap(
+    later: str,
+    earlier: str,
+    later_index: int | None = None,
+    earlier_index: int | None = None,
+) -> dict:
+    row = {"kind": "gap", "later": later, "earlier": earlier}
+    if later_index is not None:
+        row["later_index"] = later_index
+    if earlier_index is not None:
+        row["earlier_index"] = earlier_index
+    return row
 
 
 def _count(port: str, n: int) -> dict:
@@ -53,7 +88,7 @@ def _before(port: str, index: int, ref: str, ref_index: int) -> dict:
 # bench YAML as literals. windows.judge does not read the cell state machine.
 
 _SETUP = (-100_000, 200_000)
-_HOLD = (6_000, 200_000)
+_HOLD = (-100_000, 200_000)
 _MERGE = (0, 200_000)
 _DT = (6_000, 400_000)
 _CYCLE = (56_000, 400_000)
@@ -87,26 +122,26 @@ EXPECTED = {
             *_MERGE,
             {"a": ["anchor"], "b": ["anchor + offset"]},
             [
-                _count("a", 1),
-                _count("b", 1),
                 _count("q", 2),
                 _after("q", "a", 0, 0),
                 _before("q", 0, "b", 0),
                 _after("q", "b", 1, 0),
             ],
+            _arrive("a", "b"),
+            _gap("b", "a"),
         ),
         _window(
             "t_merge_ba",
             *_MERGE,
             {"b": ["anchor"], "a": ["anchor + offset"]},
             [
-                _count("b", 1),
-                _count("a", 1),
                 _count("q", 2),
                 _after("q", "b", 0, 0),
                 _before("q", 0, "a", 0),
                 _after("q", "a", 1, 0),
             ],
+            _arrive("b", "a"),
+            _gap("a", "b"),
         ),
         _window(
             "dt_min",
@@ -125,7 +160,9 @@ EXPECTED = {
             "t_setup",
             *_SETUP,
             {"a": ["anchor"], "clk": ["anchor + offset"]},
-            [_count("a", 1), _count("clk", 1), _count("q", 1), _after("q", "clk")],
+            [_count("q", 1), _after("q", "clk", ref_index=0)],
+            _arrive("a", "clk"),
+            _gap("clk", "a"),
         ),
         _window(
             "t_hold",
@@ -135,12 +172,12 @@ EXPECTED = {
                 "clk": ["anchor + lead", "anchor + lead + offset + lead"],
             },
             [
-                _count("a", 2),
-                _count("clk", 2),
                 _count("q", 2),
-                {"kind": "paired", "port": "q", "ref": "clk"},
                 _before("q", 0, "a", 1),
+                _after("q", "a", 1, 1),
             ],
+            _arrive("a", "clk"),
+            _gap("a", "clk", 1, 0),
         ),
         _window(
             "dt_min",
@@ -163,19 +200,17 @@ EXPECTED = {
             "t_setup_a",
             *_SETUP,
             {"a": ["anchor"], "b": [], "clk": ["anchor + offset"]},
-            [
-                _count("a", 1),
-                _count("b", 0),
-                _count("clk", 1),
-                _count("q", 1),
-                _after("q", "clk"),
-            ],
+            [_count("q", 1), _after("q", "clk", ref_index=0)],
+            _arrive("a", "clk"),
+            _gap("clk", "a"),
         ),
         _window(
             "t_setup_b",
             *_SETUP,
             {"a": ["anchor"], "b": ["anchor + lead"], "clk": ["anchor + lead + offset"]},
-            [_count("a", 1), _count("b", 1), _count("clk", 1), _count("q", 0)],
+            [_count("q", 0)],
+            _arrive("a", "b", "clk"),
+            _gap("clk", "b"),
         ),
         _window(
             "t_hold_a",
@@ -186,13 +221,12 @@ EXPECTED = {
                 "clk": ["anchor + lead", "anchor + lead + offset + lead"],
             },
             [
-                _count("a", 2),
-                _count("b", 0),
-                _count("clk", 2),
                 _count("q", 2),
-                {"kind": "paired", "port": "q", "ref": "clk"},
                 _before("q", 0, "a", 1),
+                _after("q", "a", 1, 1),
             ],
+            _arrive("a", "clk"),
+            _gap("a", "clk", 1, 0),
         ),
         _window(
             "t_hold_b",
@@ -203,12 +237,11 @@ EXPECTED = {
                 "clk": ["anchor + lead", "anchor + lead + offset + lead"],
             },
             [
-                _count("a", 1),
-                _count("b", 1),
-                _count("clk", 2),
                 _count("q", 1),
                 {"kind": "between", "port": "q", "earlier": "clk", "later": "b"},
             ],
+            _arrive("a", "b", "clk"),
+            _gap("b", "clk", earlier_index=0),
         ),
         _window(
             "dt_min",
@@ -232,25 +265,17 @@ EXPECTED = {
             "t_setup_a",
             *_SETUP,
             {"a": ["anchor + lead"], "b": ["anchor"], "clk": ["anchor + lead + offset"]},
-            [
-                _count("a", 1),
-                _count("b", 1),
-                _count("clk", 1),
-                _count("q", 1),
-                _after("q", "clk"),
-            ],
+            [_count("q", 1), _after("q", "clk", ref_index=0)],
+            _arrive("a", "b", "clk"),
+            _gap("clk", "a"),
         ),
         _window(
             "t_setup_b",
             *_SETUP,
             {"a": ["anchor"], "b": ["anchor + lead"], "clk": ["anchor + lead + offset"]},
-            [
-                _count("a", 1),
-                _count("b", 1),
-                _count("clk", 1),
-                _count("q", 1),
-                _after("q", "clk"),
-            ],
+            [_count("q", 1), _after("q", "clk", ref_index=0)],
+            _arrive("a", "b", "clk"),
+            _gap("clk", "b"),
         ),
         _window(
             "t_hold_a",
@@ -260,13 +285,9 @@ EXPECTED = {
                 "b": ["anchor + offset + lead"],
                 "clk": ["anchor", "anchor + offset + lead + lead"],
             },
-            [
-                _count("a", 1),
-                _count("b", 1),
-                _count("clk", 2),
-                _count("q", 1),
-                _after("q", "clk", ref_index=1),
-            ],
+            [_count("q", 1), _after("q", "b", ref_index=0)],
+            _arrive("a", "b", "clk"),
+            _gap("a", "clk", earlier_index=0),
         ),
         _window(
             "t_hold_b",
@@ -276,13 +297,9 @@ EXPECTED = {
                 "a": ["anchor + offset + lead"],
                 "clk": ["anchor", "anchor + offset + lead + lead"],
             },
-            [
-                _count("b", 1),
-                _count("a", 1),
-                _count("clk", 2),
-                _count("q", 1),
-                _after("q", "clk", ref_index=1),
-            ],
+            [_count("q", 1), _after("q", "a", ref_index=0)],
+            _arrive("a", "b", "clk"),
+            _gap("b", "clk", earlier_index=0),
         ),
         _window(
             "dt_min",
@@ -307,18 +324,20 @@ EXPECTED = {
             "t_setup",
             *_SETUP,
             {"a": ["anchor"], "clk": ["anchor + offset"]},
-            [_count("a", 1), _count("clk", 1), _count("q", 0)],
+            [_count("q", 0)],
+            _arrive("a", "clk"),
+            _gap("clk", "a"),
         ),
         _window(
             "t_hold",
             *_HOLD,
             {"clk": ["anchor"], "a": ["anchor + offset"]},
             [
-                _count("clk", 1),
-                _count("a", 1),
                 _count("q", 1),
                 {"kind": "between", "port": "q", "earlier": "clk", "later": "a"},
             ],
+            _arrive("a", "clk"),
+            _gap("a", "clk"),
         ),
         _window(
             "dt_min",
@@ -363,13 +382,9 @@ def _gate(setup_port: str) -> list:
             f"t_setup_{setup_port}",
             *_SETUP,
             {setup_port: ["anchor"], other: [], "clk": ["anchor + offset"]},
-            [
-                _count(setup_port, 1),
-                _count(other, 0),
-                _count("clk", 1),
-                _count("q", 1),
-                _after("q", "clk"),
-            ],
+            [_count("q", 1), _after("q", "clk", ref_index=0)],
+            _arrive(setup_port, "clk"),
+            _gap("clk", setup_port),
         )
     ]
 
@@ -380,13 +395,9 @@ def _gate_hold(port: str) -> dict:
         f"t_hold_{port}",
         *_HOLD,
         {port: ["anchor + offset"], other: [], "clk": ["anchor", "anchor + offset + lead"]},
-        [
-            _count(port, 1),
-            _count(other, 0),
-            _count("clk", 2),
-            _count("q", 1),
-            _after("q", "clk", ref_index=1),
-        ],
+        [_count("q", 1), _after("q", port, ref_index=0)],
+        _arrive(port, "clk"),
+        _gap(port, "clk", earlier_index=0),
     )
 
 
@@ -528,6 +539,89 @@ def test_templates_write_every_pass_rule() -> None:
             assert window["lo_fs"] < window["hi_fs"]
             assert window["lo_fs"] % HEADER["resolution_fs"] == 0
             assert window["hi_fs"] % HEADER["resolution_fs"] == 0
+
+
+def test_extra_input_pulse_with_a_correct_output_passes() -> None:
+    clauses = [_count("q", 1), _after("q", "clk", ref_index=0)]
+
+    assert judge(clauses, {"a": (1, 2), "clk": (5, 9), "q": (12,)}) == ("pass", "")
+
+
+def test_a_missing_input_is_undelivered() -> None:
+    arrived, how = inputs_arrived([{"port": "clk", "n": 1}], {"clk": (1, 2)})
+    missing, detail = inputs_arrived([{"port": "clk", "n": 1}], {"clk": ()})
+
+    assert arrived
+    assert how == ""
+    assert not missing
+    assert "missing" in detail
+
+
+def test_junction_gap_uses_the_named_pulses() -> None:
+    gap = junction_gap(
+        {"kind": "gap", "later": "clk", "earlier": "a"},
+        {"a": (1000, 5000), "clk": (1800, 9000)},
+    )
+    hold = junction_gap(
+        {"kind": "gap", "later": "a", "earlier": "clk", "later_index": 1, "earlier_index": 0},
+        {"a": (1000, 4000), "clk": (1800, 9000)},
+    )
+
+    assert gap == 800
+    assert hold == 2200
+
+
+def test_bracket_stores_the_junction_gap() -> None:
+    window = {"measure": {"kind": "gap", "later": "clk", "earlier": "a"}}
+    row = apply_measurement(
+        window,
+        {"bracket": "bracketed", "window_fs": 50_000, "fail_fs": 49_990, "how": ""},
+        pass_pulses={"a": (1000,), "clk": (1800,), "q": (3000,)},
+        fail_status="fail",
+        fail_how="q: missing, expected 1 got 0",
+        fail_pulses={"a": (1000,), "clk": (1790,)},
+    )
+
+    assert row["window_fs"] == 800
+    assert row["fail_fs"] == 790
+    assert row["bracket"] == "bracketed"
+    assert "q:" in row["how"]
+
+
+def test_missing_input_is_not_a_timing_edge() -> None:
+    row = apply_measurement(
+        {"measure": {"kind": "gap", "later": "clk", "earlier": "a"}},
+        {"bracket": "bracketed", "window_fs": 50_000, "fail_fs": 49_990, "how": ""},
+        pass_pulses={"a": (1000,), "clk": (1800,)},
+        fail_status="undelivered",
+        fail_how="a: missing, expected 1 got 0",
+        fail_pulses={"clk": (1790,)},
+    )
+
+    assert row["bracket"] == "unbracketed"
+    assert row["window_fs"] is None
+    assert row["fail_fs"] is None
+    assert "missing" in row["how"]
+
+
+def test_dff_hold_keeps_a_negative_offset() -> None:
+    window = next(item for item in EXPECTED["DFF"] if item["name"] == "t_hold")
+
+    lo = legal_lo(window["stimulus"], 200_000, 50_000, window["lo_fs"], window["hi_fs"], 10)
+
+    assert window["lo_fs"] == -100_000
+    assert lo == -100_000
+
+
+def test_and_hold_clamps_above_an_illegal_offset() -> None:
+    window = next(item for item in EXPECTED["AND"] if item["name"] == "t_hold_a")
+
+    lo = legal_lo(window["stimulus"], 200_000, 50_000, window["lo_fs"], window["hi_fs"], 10)
+
+    assert window["lo_fs"] == -100_000
+    assert lo == -94_000
+    with pytest.raises(WindowError):
+        schedule(window["stimulus"], anchor=200_000, lead=50_000, offset=window["lo_fs"])
 
 
 def test_dff_setup_places_the_clock_after_the_data() -> None:

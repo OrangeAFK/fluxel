@@ -431,7 +431,7 @@ The analog solver (M3) is built beside the main chain and joins at M5. The stati
 
 - [x] 2.1 Testbench templates per cell (source/load)
 - [x] 2.2 Parallel sweep runner with YAML configs
-- [ ] 2.3 Window extraction by bisection (setup, hold, merger collision)
+- [x] 2.3 Window extraction by bisection (setup, hold, merger collision)
 - [ ] 2.4 CBOR LUT writer; Rust reader with multilinear interpolation and valid-box checks
 - [ ] 2.5 Kernel uses LUT delays and windows; bias domains
 - [ ] 2.6 G-cells + G-comp comparison, with a report (error histograms, error vs depth)

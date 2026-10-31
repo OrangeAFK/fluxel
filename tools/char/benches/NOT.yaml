@@ -18,22 +18,26 @@ windows:
     stimulus:
       a: ["anchor"]
       clk: ["anchor + offset"]
+    arrive:
+      - {port: a, n: 1}
+      - {port: clk, n: 1}
     pass:
-      - {kind: count, port: a, n: 1}
-      - {kind: count, port: clk, n: 1}
       - {kind: count, port: q, n: 0}
-  # clk, then a. Pass: one q strictly between clk and a.
+    measure: {kind: gap, later: clk, earlier: a}
+  # clk, then a. Pass: one q strictly between the first clk and the first a.
   - name: t_hold
-    lo_fs: 6000
+    lo_fs: -100000
     hi_fs: 200000
     stimulus:
       clk: ["anchor"]
       a: ["anchor + offset"]
+    arrive:
+      - {port: a, n: 1}
+      - {port: clk, n: 1}
     pass:
-      - {kind: count, port: clk, n: 1}
-      - {kind: count, port: a, n: 1}
       - {kind: count, port: q, n: 1}
       - {kind: between, port: q, earlier: clk, later: a}
+    measure: {kind: gap, later: a, earlier: clk}
   # Two bare clocks, offset apart. Pass: q fires twice, each inside its clock gap.
   - name: dt_min
     lo_fs: 6000

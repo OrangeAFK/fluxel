@@ -1,12 +1,14 @@
 """Timing windows by bisection on offset.
 
-SPEC §4.2. A functional failure is whatever the bench template's ``pass``
-clauses reject: a missing pulse, an extra pulse, or a misplaced one. The cell
-state machine is not consulted.
+SPEC §4.2. A functional failure is a missing, extra, or misplaced output in
+the bench template's ``pass`` clauses. An extra switch of an input reference
+junction does not end the search. A missing input pulse means the stimulus
+never arrived, so the row stays unbracketed. The cell state machine is not
+consulted.
 
-The published window is the last offset that still passes. The next sample,
-10 fs toward the failure, is the first functional failure. Offsets are
-integer femtoseconds.
+The search walks the stimulus offset. When the template names a ``measure``,
+the published window is the reference-junction separation on the last passing
+sample. Offsets and gaps are integer femtoseconds.
 """
 
 from __future__ import annotations
@@ -74,6 +76,54 @@ def schedule(
     return placed
 
 
+def legal_lo(
+    stimulus: Mapping[str, Sequence[Any]],
+    anchor: int,
+    lead: int,
+    lo: int,
+    hi: int,
+    resolution: int,
+) -> int:
+    """Most negative grid offset in ``[lo, hi]`` that ``schedule`` accepts.
+
+    Same-port pulses cannot sit closer than 6 ps. A cross-port window may
+    ask for an offset below that floor; the search starts at the first
+    offset that still places every pulse.
+    """
+    if resolution <= 0 or lo % resolution or hi % resolution or lo >= hi:
+        raise WindowError(f"search {lo}..{hi} step {resolution} is not a grid")
+    if not _schedulable(stimulus, anchor, lead, hi):
+        raise WindowError("high offset does not schedule")
+    if _schedulable(stimulus, anchor, lead, lo):
+        return lo
+    low = lo
+    high = hi
+    while high - low > resolution:
+        mid = low + ((high - low) // resolution // 2) * resolution
+        if mid == low or mid == high:
+            break
+        if _schedulable(stimulus, anchor, lead, mid):
+            high = mid
+        else:
+            low = mid
+    if not _schedulable(stimulus, anchor, lead, high):
+        raise WindowError(f"no legal offset in {lo}..{hi}")
+    return high
+
+
+def _schedulable(
+    stimulus: Mapping[str, Sequence[Any]],
+    anchor: int,
+    lead: int,
+    offset: int,
+) -> bool:
+    try:
+        schedule(stimulus, anchor=anchor, lead=lead, offset=offset)
+    except WindowError:
+        return False
+    return True
+
+
 def judge(
     clauses: Sequence[Mapping[str, Any]],
     pulses: Mapping[str, Sequence[int]],
@@ -90,6 +140,69 @@ def judge(
         if how:
             return "fail", how
     return "pass", ""
+
+
+def inputs_arrived(
+    specs: Sequence[Mapping[str, Any]],
+    pulses: Mapping[str, Sequence[int]],
+) -> tuple[bool, str]:
+    """True when every stimulated port has at least ``n`` pulses. Extras pass."""
+    for spec in specs:
+        port = str(spec["port"])
+        need = int(spec["n"])
+        got = len(tuple(pulses.get(port, ())))
+        if got < need:
+            return False, f"{port}: missing, expected {need} got {got}"
+    return True, ""
+
+
+def junction_gap(measure: Mapping[str, Any], pulses: Mapping[str, Sequence[int]]) -> int:
+    """Later reference junction minus the earlier one, in femtoseconds."""
+    if measure.get("kind") != "gap":
+        raise WindowError(f"unknown measure {measure.get('kind')}")
+    later = _pulse_at(pulses, str(measure["later"]), measure.get("later_index"))
+    earlier = _pulse_at(pulses, str(measure["earlier"]), measure.get("earlier_index"))
+    return later - earlier
+
+
+def apply_measurement(
+    window: Mapping[str, Any],
+    found: Mapping[str, Any],
+    *,
+    pass_pulses: Mapping[str, Sequence[int]] | None,
+    fail_status: str,
+    fail_how: str,
+    fail_pulses: Mapping[str, Sequence[int]] | None,
+) -> dict[str, Any]:
+    """Replace a bracketed stimulus offset with the junction gap.
+
+    A failure that is not an output failure (a missing input, or a JoSIM
+    crash) is not a timing edge. Windows without ``measure`` keep the
+    stimulus offset.
+    """
+    result = dict(found)
+    if found["bracket"] != "bracketed":
+        return result
+    if fail_status != "fail":
+        how = fail_how or "input missing"
+        if not str(how).startswith("unbracketed"):
+            how = f"unbracketed: {how}"
+        return {"bracket": "unbracketed", "window_fs": None, "fail_fs": None, "how": how}
+    result["how"] = fail_how
+    measure = window.get("measure")
+    if measure is None:
+        return result
+    if pass_pulses is None:
+        raise WindowError("passing sample has no pulses")
+    result["window_fs"] = junction_gap(measure, pass_pulses)
+    if fail_pulses is None:
+        result["fail_fs"] = None
+        return result
+    try:
+        result["fail_fs"] = junction_gap(measure, fail_pulses)
+    except WindowError:
+        result["fail_fs"] = None
+    return result
 
 
 def bisect(
@@ -296,10 +409,10 @@ def bisect_job(job: Mapping[str, Any]) -> dict[str, Any]:
     josim_version = str(job["josim_version"])
     cache: dict[str, dict[str, Any]] = dict(job.get("cache") or {})
     fresh: list[dict[str, Any]] = []
-    reasons: dict[int, str] = {}
+    samples: dict[int, tuple[str, str, dict[str, Any]]] = {}
 
     def fails(offset: int) -> bool:
-        failed, how = _probe(
+        status, how, pulses = _probe(
             nominal,
             bias,
             window,
@@ -310,16 +423,40 @@ def bisect_job(job: Mapping[str, Any]) -> dict[str, Any]:
             cache,
             fresh,
         )
-        reasons[offset] = how
-        return failed
+        samples[offset] = (status, how, pulses)
+        return status != "pass"
 
-    found = bisect(int(window["lo_fs"]), int(window["hi_fs"]), resolution, fails)
+    lo = legal_lo(
+        window["stimulus"],
+        anchor,
+        lead,
+        int(window["lo_fs"]),
+        int(window["hi_fs"]),
+        resolution,
+    )
+    found = bisect(lo, int(window["hi_fs"]), resolution, fails)
     how = str(found["how"])
-    if found["bracket"] == "bracketed":
-        how = reasons.get(int(found["fail_fs"]), "")
+    window_fs = found["window_fs"]
+    fail_fs = found["fail_fs"]
+    bracket = found["bracket"]
+    if bracket == "bracketed":
+        _pass_status, _pass_how, pass_pulses = samples[int(found["window_fs"])]
+        fail_status, fail_how, fail_pulses = samples[int(found["fail_fs"])]
+        measured = apply_measurement(
+            window,
+            found,
+            pass_pulses=pass_pulses,
+            fail_status=fail_status,
+            fail_how=fail_how,
+            fail_pulses=fail_pulses,
+        )
+        bracket = measured["bracket"]
+        window_fs = measured["window_fs"]
+        fail_fs = measured["fail_fs"]
+        how = str(measured["how"])
     else:
-        end = int(window["hi_fs"]) if "high fails" in how else int(window["lo_fs"])
-        detail = reasons.get(end, "")
+        end = int(window["hi_fs"]) if "high fails" in how else lo
+        detail = samples.get(end, ("", "", {}))[1]
         if detail:
             how = f"{how}; {detail}"
     return {
@@ -327,9 +464,9 @@ def bisect_job(job: Mapping[str, Any]) -> dict[str, Any]:
         "cell": str(job["cell"]),
         "window": str(window["name"]),
         "bias_frac": _bias_text(bias),
-        "window_fs": found["window_fs"],
-        "fail_fs": found["fail_fs"],
-        "bracket": found["bracket"],
+        "window_fs": window_fs,
+        "fail_fs": fail_fs,
+        "bracket": bracket,
         "how": how,
         "probes": fresh,
     }
@@ -383,40 +520,50 @@ def _probe(
     josim_version: str,
     cache: dict[str, dict[str, Any]],
     fresh: list[dict[str, Any]],
-) -> tuple[bool, str]:
+) -> tuple[str, str, dict[str, Any]]:
     stimulus = schedule(window["stimulus"], anchor=anchor, lead=lead, offset=offset)
     deck = patch_deck(nominal, bias, stimulus, stop_fs(stimulus))
-    params = {
+    params: dict[str, Any] = {
         "bias_frac": _bias_text(bias),
         "offset_fs": offset,
         "window": window["name"],
         "pass": list(window["pass"]),
     }
+    if window.get("arrive"):
+        params["arrive"] = list(window["arrive"])
+    if window.get("measure"):
+        params["measure"] = dict(window["measure"])
     key = cache_key(deck, params, josim_version)
     hit = cache.get(key)
     if hit is None:
-        hit = _simulate(deck, window["pass"])
+        hit = _simulate(deck, window)
         hit["key"] = key
         cache[key] = hit
         fresh.append(hit)
-    return hit["outcome"] != "pass", str(hit.get("how") or "")
+    pulses = {port: list(times) for port, times in dict(hit.get("pulses") or {}).items()}
+    return str(hit["outcome"]), str(hit.get("how") or ""), pulses
 
 
-def _simulate(deck: str, clauses: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+def _simulate(deck: str, window: Mapping[str, Any]) -> dict[str, Any]:
     try:
         pulses, warnings = simulate_deck(deck)
     except (JosimFailed, JosimTimeout, JosimOutputError, BenchError, KeyError) as exc:
         how = str(exc) if isinstance(exc, KeyError) else failure_how(exc)
-        return {"outcome": "fail", "how": how, "pulses": {}}
+        return {"outcome": "undelivered", "how": how, "pulses": {}}
     stored = {port: list(times) for port, times in pulses.items()}
     if warnings:
         return {
-            "outcome": "fail",
+            "outcome": "undelivered",
             "how": "josim warning: " + "; ".join(warnings),
             "pulses": stored,
         }
-    outcome, how = judge(clauses, pulses)
-    return {"outcome": outcome, "how": how, "pulses": stored}
+    arrived, how = inputs_arrived(window.get("arrive") or [], pulses)
+    if not arrived:
+        return {"outcome": "undelivered", "how": how, "pulses": stored}
+    outcome, how = judge(window["pass"], pulses)
+    if outcome != "pass":
+        return {"outcome": "fail", "how": how, "pulses": stored}
+    return {"outcome": "pass", "how": "", "pulses": stored}
 
 
 def _eval_time(expr: Any, anchor: int, lead: int, offset: int) -> int:
@@ -556,6 +703,14 @@ def _at(
     if chosen < 0 or chosen >= len(times):
         return f"{port}: missing, expected {chosen + 1} got {len(times)}", None
     return None, times[chosen]
+
+
+def _pulse_at(pulses: Mapping[str, Sequence[int]], port: str, index: Any) -> int:
+    times = tuple(int(item) for item in pulses.get(port, ()))
+    chosen = 0 if index is None else int(index)
+    if chosen < 0 or chosen >= len(times):
+        raise WindowError(f"{port}: missing, expected {chosen + 1} got {len(times)}")
+    return times[chosen]
 
 
 def _times(pulses: Mapping[str, tuple[int, ...]], port: Any) -> tuple[int, ...]:

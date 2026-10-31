@@ -350,7 +350,11 @@ fn ref_jj_round_trip() {
     empty["ref_jj"] = json!({});
     let parsed_empty = parse_cell(&empty).unwrap();
     assert!(parsed_empty.ref_jj.is_empty());
-    assert!(!serde_json::to_string(&parsed_empty).unwrap().contains("ref_jj"));
+    assert!(
+        !serde_json::to_string(&parsed_empty)
+            .unwrap()
+            .contains("ref_jj")
+    );
 }
 
 #[test]
@@ -359,7 +363,9 @@ fn ref_jj_rejects_unknown_port() {
     cell["ref_jj"] = json!({ "a": "B1", "nope": "B9" });
     assert_eq!(
         parse_cell(&cell).unwrap_err(),
-        CellError::UnknownPort { port: "nope".into() }
+        CellError::UnknownPort {
+            port: "nope".into()
+        }
     );
 }
 

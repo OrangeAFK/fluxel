@@ -83,6 +83,7 @@ fn dff(t_setup: i64, t_hold: i64) -> CellDef {
         bias_ua: None,
         netlist: None,
         lut: None,
+        ref_jj: BTreeMap::new(),
         notes: None,
         delays: delays(&[("t_clk_q", 5000), ("t_setup", t_setup), ("t_hold", t_hold)]),
     }
@@ -132,6 +133,7 @@ fn merger() -> CellDef {
         bias_ua: None,
         netlist: None,
         lut: None,
+        ref_jj: BTreeMap::new(),
         notes: None,
         delays: delays(&[("d", 1000), ("w", 500)]),
     }

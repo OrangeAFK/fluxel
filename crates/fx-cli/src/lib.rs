@@ -17,7 +17,7 @@ const SNAPSHOT_EVERY: u64 = 1024;
 #[derive(Debug, Error)]
 pub enum CliError {
     #[error(
-        "usage: fx-cli sim --design <file> --stimulus <file> --lib <dir> [--until <fs>] [--out <file>] [--log <file>] [--violations]\n       fx-cli hash --log <file>"
+        "usage: fx-cli sim --design <file> --stimulus <file> --lib <dir> [--until <fs>] [--out <file>] [--log <file>] [--violations]\n       fx-cli hash --log <file>\n       fx-cli export-josim --design <file> --stimulus <file> --lib <dir> --out <file> [--bias <mul>] [--step <fs>] [--stop <fs>] [--current-in] [--resistor-out]"
     )]
     Usage,
     #[error("cannot read {path}: {source}")]
@@ -56,6 +56,16 @@ pub enum CliError {
     Kernel(#[from] KernelError),
     #[error("invalid --until {value}")]
     BadUntil { value: String },
+    #[error("invalid --bias {value}")]
+    BadBias { value: String },
+    #[error("invalid --step {value}")]
+    BadStep { value: String },
+    #[error("invalid --stop {value}")]
+    BadStop { value: String },
+    #[error("cannot find repository root from {path}")]
+    NoRoot { path: String },
+    #[error(transparent)]
+    Flow(#[from] fx_flow::FlowError),
 }
 
 /// Pulse JSON, CBOR log, and the counts printed on stderr.

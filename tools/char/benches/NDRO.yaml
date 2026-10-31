@@ -1,0 +1,10 @@
+cell: NDRO
+source: JTL
+load: JTL
+bias_frac: 1.0
+timestep_ps: 0.025
+length_ps: 1200
+inputs:
+  a: [200]
+  b: [550]
+  clk: [100, 350, 480, 700]

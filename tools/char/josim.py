@@ -57,6 +57,23 @@ def version() -> str:
     return text
 
 
+def warning_lines(log: str) -> list[str]:
+    """Warning lines after JoSIM's progress bar is dropped.
+
+    A progress line starts with ``[`` and contains ``%``, matching the deck
+    log in DECISIONS.md. Any other line that says ``warning`` is returned.
+    """
+    found: list[str] = []
+    for line in log.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("[") and "%" in stripped:
+            continue
+        # JoSIM prefixes a warning with "W:" and does not always say "warning".
+        if "warning" in stripped.lower() or stripped.startswith("W:"):
+            found.append(stripped)
+    return found
+
+
 def run(
     netlist: Path,
     *,
@@ -70,6 +87,17 @@ def run(
     ``.include`` paths resolve. ``columns`` selects signal names in that order;
     omitted, every signal column is returned.
     """
+    traces, _log = run_with_log(netlist, timeout=timeout, columns=columns)
+    return traces
+
+
+def run_with_log(
+    netlist: Path,
+    *,
+    timeout: float,
+    columns: Sequence[str] | None = None,
+) -> tuple[dict[str, tuple[tuple[float, ...], tuple[float, ...]]], str]:
+    """Like ``run``, and also return the simulator log."""
     netlist = Path(netlist).resolve()
     with tempfile.TemporaryDirectory() as tmp:
         csv_path = Path(tmp) / "output.csv"
@@ -92,7 +120,7 @@ def run(
         if not csv_path.is_file():
             raise JosimOutputError(("time",))
         text = csv_path.read_text(encoding="utf-8", errors="replace")
-    return _parse_csv(text, columns)
+    return _parse_csv(text, columns), log
 
 
 def _parse_csv(

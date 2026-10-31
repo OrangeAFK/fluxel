@@ -7,3 +7,5 @@ publish.workspace = true
 
 [dependencies]
 fx-families = { path = "../fx-families" }
+fx-ir = { path = "../fx-ir" }
+thiserror.workspace = true

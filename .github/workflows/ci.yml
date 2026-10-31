@@ -25,7 +25,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install pytest and hypothesis
-        run: pip install pytest hypothesis
+        run: pip install pytest hypothesis pyyaml matplotlib pyarrow
 
       - name: cargo fmt
         run: cargo fmt --check

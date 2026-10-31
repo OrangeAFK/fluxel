@@ -204,6 +204,13 @@
     "provenance": {
       "$ref": "#/definitions/Provenance"
     },
+    "ref_jj": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Reference jjmit inside the RSFQlib subckt, one name per port.",
+      "type": "object"
+    },
     "states": {
       "items": {
         "type": "string"

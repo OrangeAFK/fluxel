@@ -71,7 +71,7 @@ fluxel/
 | wasm-bindgen / wasm-pack | single-threaded by default | WASM API |
 | Node LTS, Vite, TypeScript (strict) | — | front end |
 | three.js | instanced meshes, greedy-meshed chunks | voxel rendering |
-| Python 3.11+ | numpy, scipy, pyyaml, pytest, hypothesis | characterization, golden data |
+| Python 3.11+ | numpy, scipy, pyyaml, pytest, hypothesis, matplotlib, pyarrow | characterization, golden data |
 | JoSIM | built from source (CMake); invoked as CLI from Python | reference analog sim |
 | Yosys | OSS CAD Suite | synthesis and import |
 | PyLSE | installed from GitHub | functional oracle for the kernel |
@@ -429,8 +429,8 @@ The analog solver (M3) is built beside the main chain and joins at M5. The stati
 
 ### M2 — Characterization + table timing → Gate A
 
-- [ ] 2.1 Testbench templates per cell (source/load)
-- [ ] 2.2 Parallel sweep runner with YAML configs
+- [x] 2.1 Testbench templates per cell (source/load)
+- [x] 2.2 Parallel sweep runner with YAML configs
 - [ ] 2.3 Window extraction by bisection (setup, hold, merger collision)
 - [ ] 2.4 CBOR LUT writer; Rust reader with multilinear interpolation and valid-box checks
 - [ ] 2.5 Kernel uses LUT delays and windows; bias domains

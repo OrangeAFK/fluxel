@@ -49,6 +49,7 @@ fn buffer(delay: i64) -> CellDef {
         bias_ua: None,
         netlist: None,
         lut: None,
+        ref_jj: BTreeMap::new(),
         notes: None,
         delays: BTreeMap::from([("d".into(), Femtos(delay))]),
     }
@@ -307,6 +308,7 @@ fn splitter(q0: i64, q1: i64) -> CellDef {
         bias_ua: None,
         netlist: None,
         lut: None,
+        ref_jj: BTreeMap::new(),
         notes: None,
         delays: BTreeMap::from([("d0".into(), Femtos(q0)), ("d1".into(), Femtos(q1))]),
     }
@@ -561,6 +563,7 @@ fn toggle(delay: i64) -> CellDef {
         bias_ua: None,
         netlist: None,
         lut: None,
+        ref_jj: BTreeMap::new(),
         notes: None,
         delays: BTreeMap::from([("d".into(), Femtos(delay))]),
     }

@@ -98,6 +98,9 @@ pub struct CellDef {
     pub netlist: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lut: Option<String>,
+    /// Reference jjmit inside the RSFQlib subckt, one name per port.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub ref_jj: BTreeMap<String, String>,
     /// Which library file this machine models.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
@@ -127,6 +130,10 @@ pub enum CellError {
     LiteralTiming,
     #[error("characterized cell is missing jj_count, netlist, or lut")]
     MissingPath,
+    #[error("ref_jj is missing port {port}")]
+    MissingRefJj { port: String },
+    #[error("ref_jj for port {port} is empty")]
+    EmptyRefJj { port: String },
 }
 
 impl CellDef {
@@ -239,6 +246,29 @@ impl CellDef {
         for port in &self.ports.outputs {
             if !fired.contains(port.as_str()) {
                 return Err(CellError::UnfiredOutput { port: port.clone() });
+            }
+        }
+
+        if !self.ref_jj.is_empty() {
+            for port in self.ref_jj.keys() {
+                if !inputs.contains(port.as_str()) && !outputs.contains(port.as_str()) {
+                    return Err(CellError::UnknownPort { port: port.clone() });
+                }
+            }
+            for port in inputs.iter().chain(outputs.iter()) {
+                match self.ref_jj.get(*port) {
+                    None => {
+                        return Err(CellError::MissingRefJj {
+                            port: (*port).to_string(),
+                        });
+                    }
+                    Some(device) if device.is_empty() => {
+                        return Err(CellError::EmptyRefJj {
+                            port: (*port).to_string(),
+                        });
+                    }
+                    Some(_) => {}
+                }
             }
         }
         Ok(())

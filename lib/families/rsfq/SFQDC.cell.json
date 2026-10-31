@@ -22,7 +22,8 @@
   ],
   "constraints": [],
   "jj_count": 8,
-  "netlist": null,
+  "ref_jj": { "a": "B1", "q": "B8" },
+  "netlist": "lib/rsfqlib/RSFQlib/mitll_SFQDC/THmitll_SFQDC_v3p0_extracted.cir",
   "lut": null,
   "notes": "TODO-M2: t_a_q is a 5000 fs placeholder. No TimEx Verilog. Each pulse on a toggles the DC level and emits one edge on q. jj_count is 8, from B1-B8 in lib/rsfqlib/RSFQlib/mitll_SFQDC/THmitll_SFQDC_v3p0_base.cir.",
   "delays": { "t_a_q": 5000 }

@@ -16,7 +16,8 @@
   ],
   "constraints": [],
   "jj_count": 3,
-  "netlist": null,
+  "ref_jj": { "a": "B1", "q": "B3" },
+  "netlist": "lib/rsfqlib/RSFQlib/mitll_DCSFQ/THmitll_DCSFQ_v3p0_extracted.cir",
   "lut": null,
   "notes": "TODO-M2: t_a_q is a 5000 fs placeholder. No TimEx Verilog. One input event on a is one SFQ on q. jj_count is 3, from B1-B3 in lib/rsfqlib/RSFQlib/mitll_DCSFQ/THmitll_DCSFQ_v3p0_base.cir.",
   "delays": { "t_a_q": 5000 }

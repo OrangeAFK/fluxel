@@ -31,7 +31,8 @@
     { "kind": "hold", "first": "clk", "then": "clk", "window": "t_clk_clk" }
   ],
   "jj_count": 11,
-  "netlist": null,
+  "ref_jj": { "a": "B1", "b": "B4", "clk": "B9", "q": "B11" },
+  "netlist": "lib/rsfqlib/RSFQlib/mitll_NDRO/THmitll_NDRO_v3p0_extracted.cir",
   "lut": null,
   "notes": "TODO-M2: output delays are 5000 fs and windows are 1000 fs, placeholders. Models lib/rsfqlib/RSFQlib/mitll_NDRO/THmitll_NDRO_v3p0.v. a sets, b resets, and clk reads without clearing. jj_count is 11, from B1-B11 in THmitll_NDRO_v3p0_base.cir.",
   "delays": { "t_clk_q": 5000, "t_a_b": 1000, "t_b_a": 1000, "t_clk_clk": 1000 }

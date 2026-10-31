@@ -29,7 +29,8 @@
     { "kind": "hold", "first": "clk", "then": "a", "window": "t_hold" }
   ],
   "jj_count": 8,
-  "netlist": null,
+  "ref_jj": { "a": "B1", "clk": "B5", "q": "B8" },
+  "netlist": "lib/rsfqlib/RSFQlib/mitll_NOT/THmitll_NOT_v3p0_extracted.cir",
   "lut": null,
   "notes": "TODO-M2: output delays are 5000 fs and windows are 1000 fs, placeholders. Models lib/rsfqlib/RSFQlib/mitll_NOT/THmitll_NOT_v3p0.v. jj_count is 8, from B1-B8 in THmitll_NOT_v3p0_base.cir.",
   "delays": { "t_clk_q": 5000, "t_setup": 1000, "t_hold": 1000 }

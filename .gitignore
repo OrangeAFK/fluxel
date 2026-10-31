@@ -23,3 +23,6 @@ scratch/**/dcsfq_*.cir
 scratch/**/jtl_*.cir
 scratch/**/chain_0p8.cir
 scratch/**/chain_1p2.cir
+
+# Sweep caches, parquet, and plots
+tools/char/out/

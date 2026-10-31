@@ -1,0 +1,9 @@
+cell: MERGE
+source: JTL
+load: JTL
+bias_frac: 1.0
+timestep_ps: 0.025
+length_ps: 1200
+inputs:
+  a: [100, 400]
+  b: [250]

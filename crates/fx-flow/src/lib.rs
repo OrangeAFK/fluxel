@@ -1,7 +1,6 @@
+mod export;
+
+pub use export::{DeckOpts, FlowError, export_josim, export_josim_with};
+
 #[cfg(test)]
-mod tests {
-    #[test]
-    fn crate_links() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+mod tests;

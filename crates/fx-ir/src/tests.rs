@@ -333,6 +333,57 @@ fn characterized_null_jj_count() {
 }
 
 #[test]
+fn ref_jj_round_trip() {
+    let mut cell = behavioral_buf();
+    cell["ref_jj"] = json!({ "a": "B1", "q": "B2" });
+    let parsed = parse_cell(&cell).unwrap();
+    assert_eq!(parsed.ref_jj.get("a").map(String::as_str), Some("B1"));
+    assert_eq!(parsed.ref_jj.get("q").map(String::as_str), Some("B2"));
+    let again = CellDef::parse(&serde_json::to_string(&parsed).unwrap()).unwrap();
+    assert_eq!(again.ref_jj, parsed.ref_jj);
+
+    let plain = parse_cell(&behavioral_buf()).unwrap();
+    assert!(plain.ref_jj.is_empty());
+    assert!(!serde_json::to_string(&plain).unwrap().contains("ref_jj"));
+
+    let mut empty = behavioral_buf();
+    empty["ref_jj"] = json!({});
+    let parsed_empty = parse_cell(&empty).unwrap();
+    assert!(parsed_empty.ref_jj.is_empty());
+    assert!(!serde_json::to_string(&parsed_empty).unwrap().contains("ref_jj"));
+}
+
+#[test]
+fn ref_jj_rejects_unknown_port() {
+    let mut cell = behavioral_buf();
+    cell["ref_jj"] = json!({ "a": "B1", "nope": "B9" });
+    assert_eq!(
+        parse_cell(&cell).unwrap_err(),
+        CellError::UnknownPort { port: "nope".into() }
+    );
+}
+
+#[test]
+fn ref_jj_must_cover_every_port() {
+    let mut cell = behavioral_buf();
+    cell["ref_jj"] = json!({ "a": "B1" });
+    assert_eq!(
+        parse_cell(&cell).unwrap_err(),
+        CellError::MissingRefJj { port: "q".into() }
+    );
+}
+
+#[test]
+fn ref_jj_rejects_empty_device() {
+    let mut cell = behavioral_buf();
+    cell["ref_jj"] = json!({ "a": "", "q": "B2" });
+    assert_eq!(
+        parse_cell(&cell).unwrap_err(),
+        CellError::EmptyRefJj { port: "a".into() }
+    );
+}
+
+#[test]
 fn behavioral_null_jj_count_and_paths() {
     let mut cell = behavioral_buf();
     cell["jj_count"] = json!(null);
@@ -568,6 +619,7 @@ fn arb_cell() -> impl Strategy<Value = CellDef> {
                     bias_ua: None,
                     netlist: None,
                     lut: None,
+                    ref_jj: BTreeMap::new(),
                     notes: None,
                     delays,
                 }
@@ -676,9 +728,10 @@ fn rsfq_library_cells_parse() {
         assert_eq!(cell.name, name, "{file_name}");
         assert_eq!(cell.family, "rsfq");
         assert_eq!(cell.provenance, Provenance::Behavioral);
-        assert_eq!(cell.netlist, None);
         assert_eq!(cell.lut, None);
         assert!(cell.notes.is_some(), "{name} notes");
+        assert_eq!(cell.netlist.as_deref(), expected_netlist(name), "{name}");
+        assert_eq!(cell.ref_jj, expected_ref_jj(name), "{name}");
         found.insert(name.to_string(), cell);
     }
 
@@ -722,6 +775,48 @@ fn rsfq_library_cells_parse() {
             "No RSFQlib v3.0 source. Behavioral model of standard RSFQ TFF: 2 states, output on every second input. Placeholder delay. Not characterizable until a netlist is sourced."
         )
     );
+    assert!(found["TFF"].ref_jj.is_empty());
+    assert_eq!(found["TFF"].netlist, None);
+}
+
+fn expected_netlist(name: &str) -> Option<&'static str> {
+    match name {
+        "TFF" => None,
+        "AND" => Some("lib/rsfqlib/RSFQlib/mitll_AND2/THmitll_AND2_v3p0_extracted.cir"),
+        "OR" => Some("lib/rsfqlib/RSFQlib/mitll_OR2/THmitll_OR2_v3p0_extracted.cir"),
+        "DCSFQ" => Some("lib/rsfqlib/RSFQlib/mitll_DCSFQ/THmitll_DCSFQ_v3p0_extracted.cir"),
+        "DFF" => Some("lib/rsfqlib/RSFQlib/mitll_DFF/THmitll_DFF_v3p0_extracted.cir"),
+        "JTL" => Some("lib/rsfqlib/RSFQlib/mitll_JTL/THmitll_JTL_v3p0_extracted.cir"),
+        "MERGE" => Some("lib/rsfqlib/RSFQlib/mitll_MERGE/THmitll_MERGE_v3p0_extracted.cir"),
+        "NDRO" => Some("lib/rsfqlib/RSFQlib/mitll_NDRO/THmitll_NDRO_v3p0_extracted.cir"),
+        "NOT" => Some("lib/rsfqlib/RSFQlib/mitll_NOT/THmitll_NOT_v3p0_extracted.cir"),
+        "SFQDC" => Some("lib/rsfqlib/RSFQlib/mitll_SFQDC/THmitll_SFQDC_v3p0_extracted.cir"),
+        "SPLIT" => Some("lib/rsfqlib/RSFQlib/mitll_SPLIT/THmitll_SPLIT_v3p0_extracted.cir"),
+        "XOR" => Some("lib/rsfqlib/RSFQlib/mitll_XOR/THmitll_XOR_v3p0_extracted.cir"),
+        other => panic!("unexpected cell {other}"),
+    }
+}
+
+fn expected_ref_jj(name: &str) -> BTreeMap<String, String> {
+    let pairs: &[(&str, &str)] = match name {
+        "TFF" => &[],
+        "JTL" => &[("a", "B1"), ("q", "B2")],
+        "SPLIT" => &[("a", "B1"), ("q0", "B2"), ("q1", "B3")],
+        "MERGE" => &[("a", "B1"), ("b", "B4"), ("q", "B7")],
+        "DFF" => &[("a", "B1"), ("clk", "B5"), ("q", "B7")],
+        "NDRO" => &[("a", "B1"), ("b", "B4"), ("clk", "B9"), ("q", "B11")],
+        "AND" => &[("a", "B1"), ("b", "B7"), ("clk", "B13"), ("q", "B15")],
+        "OR" => &[("a", "B1"), ("b", "B4"), ("clk", "B10"), ("q", "B12")],
+        "XOR" => &[("a", "B1"), ("b", "B4"), ("clk", "B9"), ("q", "B11")],
+        "NOT" => &[("a", "B1"), ("clk", "B5"), ("q", "B8")],
+        "DCSFQ" => &[("a", "B1"), ("q", "B3")],
+        "SFQDC" => &[("a", "B1"), ("q", "B8")],
+        other => panic!("unexpected cell {other}"),
+    };
+    pairs
+        .iter()
+        .map(|(port, device)| ((*port).to_string(), (*device).to_string()))
+        .collect()
 }
 
 #[test]

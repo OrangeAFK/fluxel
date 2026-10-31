@@ -68,6 +68,34 @@ def _ks_up(p0: float, p1: float) -> list[int]:
     return [k for k in range(k0, k1 + 1) if p0 < (2 * k + 1) * PI <= p1]
 
 
+def pulse_log(
+    deck: str,
+    traces: dict[str, tuple[tuple[float, ...], tuple[float, ...]]],
+) -> dict[str, tuple[int, ...]]:
+    """Upward crossings keyed by ``instance.port``.
+
+    ``deck`` carries one ``* fluxel-map <instance.port> <column>`` comment per
+    printed junction. Times are femtoseconds, rounded from the trace's seconds.
+    A port with no upward crossing is omitted.
+    """
+    log: dict[str, tuple[int, ...]] = {}
+    mapped: list[tuple[str, str]] = []
+    for line in deck.splitlines():
+        parts = line.split()
+        if parts[:2] == ["*", "fluxel-map"] and len(parts) == 4:
+            mapped.append((parts[2], parts[3]))
+    for key, column in mapped:
+        series = traces.get(column)
+        if series is None:
+            raise KeyError(column)
+        time, phase = series
+        crossings = extract_crossings(time, phase)
+        times = tuple(int(round(crossing.t * 1e15)) for crossing in crossings.pulses)
+        if times:
+            log[key] = times
+    return log
+
+
 def _ks_down(p0: float, p1: float) -> list[int]:
     """Odd levels with p1 <= (2k+1)π < p0, high k first."""
     k_hi = math.ceil((p0 / PI - 1.0) / 2.0)

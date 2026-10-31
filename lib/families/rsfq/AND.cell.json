@@ -54,7 +54,8 @@
     { "kind": "hold", "first": "clk", "then": "b", "window": "t_hold_b" }
   ],
   "jj_count": 15,
-  "netlist": null,
+  "ref_jj": { "a": "B1", "b": "B7", "clk": "B13", "q": "B15" },
+  "netlist": "lib/rsfqlib/RSFQlib/mitll_AND2/THmitll_AND2_v3p0_extracted.cir",
   "lut": null,
   "notes": "TODO-M2: output delays are 5000 fs and windows are 1000 fs, placeholders. Models lib/rsfqlib/RSFQlib/mitll_AND2/THmitll_AND2_v3p0.v. jj_count is 15, from B1-B15 in THmitll_AND2_v3p0_base.cir. TimEx has no data-to-clock setup on AND2.",
   "delays": { "t_clk_q": 5000, "t_hold_a": 1000, "t_hold_b": 1000 }

@@ -295,6 +295,7 @@ fn buffer_cell(name: &str, fires: &[(&str, &str)]) -> CellDef {
         bias_ua: None,
         netlist: None,
         lut: None,
+        ref_jj: BTreeMap::new(),
         notes: None,
         delays,
     }
@@ -354,6 +355,7 @@ fn dff() -> CellDef {
         bias_ua: None,
         netlist: None,
         lut: None,
+        ref_jj: BTreeMap::new(),
         notes: None,
         delays: BTreeMap::from([("t_clk_q".to_string(), Femtos(5_000))]),
     }

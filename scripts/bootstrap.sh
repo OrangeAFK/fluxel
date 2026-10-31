@@ -110,7 +110,7 @@ install_python() {
   if ! "${py}" -m pip --version >/dev/null 2>&1; then
     curl -fsSL https://bootstrap.pypa.io/get-pip.py | "${py}"
   fi
-  "${py}" -m pip install numpy scipy pyyaml pytest hypothesis matplotlib
+  "${py}" -m pip install numpy scipy pyyaml pytest hypothesis matplotlib pyarrow
 }
 
 install_yosys() {

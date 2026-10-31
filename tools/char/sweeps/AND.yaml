@@ -1,0 +1,5 @@
+cell: AND
+axes:
+  bias_frac: {start: "0.70", stop: "1.30", step: "0.05"}
+  dt_prev_fs: {start: min, stop: settled, spacing: log, points: 8}
+  data_clock_offset_fs: {start: -50000, stop: 50000, step: 10000}

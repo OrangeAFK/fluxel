@@ -8,7 +8,16 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
-from compare import format_view, functional_view, ps_to_fs
+from compare import (
+    PathError,
+    StimulusSpacingError,
+    first_difference,
+    format_view,
+    functional_view,
+    is_clocked,
+    load_cells,
+    ps_to_fs,
+)
 from design_to_pylse import UnknownCell, skip_reason, to_pylse_source
 from generate import SEED, generate_cases
 
@@ -19,6 +28,7 @@ class Status(Enum):
     MATCH = "yes"
     MISMATCH = "no"
     SKIPPED = "skip"
+    ERROR = "error"
 
 
 @dataclass
@@ -51,45 +61,64 @@ def evaluate(
     stimulus: dict,
     fx_bin: Path,
     lib_dir: Path,
+    cells: dict,
 ) -> Row:
     reason = skip_reason(design)
     if reason is not None:
-        report = f"{name} | SKIPPED | {reason} | skip"
-        return Row(Status.SKIPPED, report, "")
+        return Row(Status.SKIPPED, _line(name, "skip", "skip", reason), "")
 
+    mode = "clocked" if is_clocked(design) else "unclocked"
     fx_pulses, fx_error = _run_fx(design, stimulus, fx_bin, lib_dir)
     try:
         source = to_pylse_source(design, stimulus)
     except UnknownCell as err:
-        fx_text = fx_error if fx_error is not None else _view_text(design, stimulus, fx_pulses)
-        report = f"{name} | {fx_text} | no built-in for {err.cell} | no"
-        traces = _traces(fx_pulses, {}, f"no built-in for {err.cell}")
-        return Row(Status.MISMATCH, report, traces)
+        detail = f"no built-in for {err.cell}"
+        return Row(
+            Status.MISMATCH,
+            _line(name, mode, "no", detail),
+            _traces(fx_pulses, {}, detail),
+        )
 
     if fx_error is not None:
-        report = f"{name} | {fx_error} | | no"
-        return Row(Status.MISMATCH, report, _traces(fx_pulses, {}, fx_error))
+        return Row(
+            Status.MISMATCH,
+            _line(name, mode, "no", fx_error),
+            _traces(fx_pulses, {}, fx_error),
+        )
 
     pylse_pulses, pylse_error = _run_pylse(source)
     if pylse_error is not None:
-        fx_text = _view_text(design, stimulus, fx_pulses)
-        report = f"{name} | {fx_text} | {pylse_error} | no"
-        return Row(Status.MISMATCH, report, _traces(fx_pulses, pylse_pulses, pylse_error))
+        return Row(
+            Status.MISMATCH,
+            _line(name, mode, "no", pylse_error),
+            _traces(fx_pulses, pylse_pulses, pylse_error),
+        )
 
-    fx_view = functional_view(design, stimulus, fx_pulses)
-    pylse_view = functional_view(design, stimulus, pylse_pulses)
-    status = Status.MATCH if fx_view == pylse_view else Status.MISMATCH
-    fx_text = format_view(*fx_view)
-    pylse_text = format_view(*pylse_view)
-    report = f"{name} | {fx_text} | {pylse_text} | {status.value}"
-    traces = "" if status is Status.MATCH else _traces(fx_pulses, pylse_pulses, None)
-    return Row(status, report, traces)
+    try:
+        fx_view = functional_view(design, stimulus, fx_pulses, cells)
+        pylse_view = functional_view(design, stimulus, pylse_pulses, cells)
+    except (StimulusSpacingError, PathError) as err:
+        return Row(
+            Status.ERROR,
+            _line(name, mode, "error", str(err)),
+            _traces(fx_pulses, pylse_pulses, str(err)),
+        )
+
+    diff = first_difference(fx_view[1], pylse_view[1])
+    if diff is None:
+        return Row(Status.MATCH, _line(name, mode, "yes", format_view(*fx_view)), "")
+    return Row(
+        Status.MISMATCH,
+        _line(name, mode, "no", diff),
+        _traces(fx_pulses, pylse_pulses, None),
+    )
 
 
 def main() -> int:
     root = Path(__file__).resolve().parents[2]
     fx_bin = ensure_fx_cli(root)
     lib = root / "lib" / "families" / "rsfq"
+    cells = load_cells(lib)
     cases = list(generate_cases(200, SEED))
     for directory in sorted((root / "examples").iterdir()):
         design_path = directory / "design.json"
@@ -98,12 +127,15 @@ def main() -> int:
         design = json.loads(design_path.read_text(encoding="utf-8"))
         stimulus = json.loads((directory / "stimulus.json").read_text(encoding="utf-8"))
         cases.append((directory.name, design, stimulus))
-    for name, design, stimulus in cases:
-        row = evaluate(name, design, stimulus, fx_bin, lib)
+    rows = [evaluate(name, design, stimulus, fx_bin, lib, cells) for name, design, stimulus in cases]
+    for row in rows:
         print(row.report, flush=True)
-        if row.status is Status.MISMATCH:
+    failed = [row for row in rows if row.status in (Status.MISMATCH, Status.ERROR)]
+    if failed:
+        print("", flush=True)
+        for row in failed:
             print(row.traces, flush=True)
-            return 1
+        return 1
     return 0
 
 
@@ -169,8 +201,8 @@ def _run_pylse(source: str) -> tuple[dict[str, list[int]], str | None]:
     return {key: ps_to_fs(times) for key, times in events.items()}, None
 
 
-def _view_text(design: dict, stimulus: dict, pulses: dict[str, list[int]]) -> str:
-    return format_view(*functional_view(design, stimulus, pulses))
+def _line(name: str, mode: str, result: str, detail: str) -> str:
+    return f"{name} | {mode} | {result} | {detail}"
 
 
 def _traces(

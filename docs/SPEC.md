@@ -422,7 +422,7 @@ The analog solver (M3) is built beside the main chain and joins at M5. The stati
 - [x] 1.2 Kernel: heap, ordering, transitions, constraints, violations, event log, snapshots, replay
 - [x] 1.3 RSFQ cell definitions with constant delays: JTL, SPLIT, MERGE, DFF, NDRO, TFF, AND, OR, XOR, NOT, DC/SFQ, SFQ/DC
 - [x] 1.4 `fx-cli sim`: design + stimulus → pulse log
-- [ ] 1.5 PyLSE oracle: the same circuits in PyLSE, compared functionally
+- [x] 1.5 PyLSE oracle: the same circuits in PyLSE, compared functionally
 - [x] 1.6 Property tests: determinism, causality, fanout rejection
 
 **Accept:** functional match with PyLSE on at least 5 circuits; the determinism test passes.

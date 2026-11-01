@@ -42,6 +42,16 @@ jobs:
       - name: pytest
         run: pytest tools/char
 
+      - name: Install PyLSE oracle
+        run: |
+          git clone --branch pldi-2022 --depth 1 https://github.com/UCSBarchlab/PyLSE.git third_party/pylse
+          pip install -e third_party/pylse/third-party/pyuppaal
+          pip install -e third_party/pylse
+          pip install ./tools/oracle
+
+      - name: pytest oracle
+        run: pytest tools/oracle
+
       - name: golden manifest
         run: python scripts/check_manifest.py
 

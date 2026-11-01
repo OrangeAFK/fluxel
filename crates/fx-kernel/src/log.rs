@@ -39,6 +39,14 @@ pub enum LogEvent {
         inst: String,
         port: String,
     },
+    /// A LUT axis fell outside its valid box. `point` is the requested
+    /// coordinate in LUT integer units. The kernel used the clamped sample.
+    Uncharacterized {
+        t: Femtos,
+        inst: String,
+        entry: String,
+        point: BTreeMap<String, i64>,
+    },
 }
 
 /// Fired pulses and violations. Forward simulation only appends.

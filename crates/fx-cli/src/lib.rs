@@ -5,6 +5,7 @@ use std::path::Path;
 
 use fx_ir::cell::{CellDef, CellError};
 use fx_ir::design::{Design, DesignError};
+use fx_ir::lut::{LutBundle, LutError};
 use fx_ir::stimulus::{Stimulus, StimulusError};
 use fx_kernel::{EventLog, KernelError, LogEvent, Simulator, ViolationPolicy};
 use fx_time::Femtos;
@@ -42,6 +43,14 @@ pub enum CliError {
     EmptyLibrary { path: String },
     #[error("duplicate cell {name}")]
     DuplicateCell { name: String },
+    #[error("duplicate LUT for cell {name}")]
+    DuplicateLut { name: String },
+    #[error("invalid LUT {path}: {source}")]
+    Lut {
+        path: String,
+        #[source]
+        source: LutError,
+    },
     #[error("invalid cell {path}: {source}")]
     Cell {
         path: String,
@@ -163,11 +172,44 @@ pub fn load_cells(dir: &Path) -> Result<BTreeMap<String, CellDef>, CliError> {
     Ok(cells)
 }
 
+/// Load every `*.lut.cbor` in `dir`, keyed by the bundle's cell name.
+pub fn load_luts(dir: &Path) -> Result<BTreeMap<String, LutBundle>, CliError> {
+    let entries = std::fs::read_dir(dir).map_err(|source| CliError::LibraryIo {
+        path: dir.display().to_string(),
+        source,
+    })?;
+    let mut luts = BTreeMap::new();
+    for entry in entries {
+        let entry = entry.map_err(|source| CliError::LibraryIo {
+            path: dir.display().to_string(),
+            source,
+        })?;
+        let path = entry.path();
+        let Some(file_name) = path.file_name().and_then(|name| name.to_str()) else {
+            continue;
+        };
+        if !file_name.ends_with(".lut.cbor") {
+            continue;
+        }
+        let bytes = read_bytes(&path)?;
+        let bundle = LutBundle::from_cbor(&bytes).map_err(|source| CliError::Lut {
+            path: path.display().to_string(),
+            source,
+        })?;
+        let name = bundle.cell.clone();
+        if luts.insert(name.clone(), bundle).is_some() {
+            return Err(CliError::DuplicateLut { name });
+        }
+    }
+    Ok(luts)
+}
+
 /// Run `design_json` with `stimulus_json` until `until`, or to completion.
 pub fn simulate(
     design_json: &str,
     stimulus_json: &str,
     cells: BTreeMap<String, CellDef>,
+    luts: BTreeMap<String, LutBundle>,
     until: Option<i64>,
 ) -> Result<SimReport, CliError> {
     let design = Design::parse(design_json)?;
@@ -175,6 +217,7 @@ pub fn simulate(
     let mut sim = Simulator::new(
         design,
         cells,
+        luts,
         stimulus,
         ViolationPolicy::Record,
         SNAPSHOT_EVERY,
@@ -227,7 +270,8 @@ fn event_time(event: &LogEvent) -> i64 {
         | LogEvent::SetupViolation { t, .. }
         | LogEvent::HoldViolation { t, .. }
         | LogEvent::Collision { t, .. }
-        | LogEvent::IllegalInput { t, .. } => t.0,
+        | LogEvent::IllegalInput { t, .. }
+        | LogEvent::Uncharacterized { t, .. } => t.0,
     }
 }
 
@@ -242,6 +286,8 @@ fn violation_line(event: &LogEvent) -> Option<String> {
         LogEvent::IllegalInput { t, inst, port } => {
             Some(format!("illegal {inst} port={port} t={}", t.0))
         }
-        LogEvent::Fired { .. } | LogEvent::Collision { .. } => None,
+        LogEvent::Fired { .. } | LogEvent::Collision { .. } | LogEvent::Uncharacterized { .. } => {
+            None
+        }
     }
 }

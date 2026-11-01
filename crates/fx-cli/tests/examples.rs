@@ -58,7 +58,7 @@ fn expect_map(pairs: &[(&str, usize)]) -> BTreeMap<String, usize> {
         .collect()
 }
 
-/// Two input pulses, each copied by all eight JTL stages (`t_a_q` = 1819).
+/// Two input pulses, each copied by all eight JTL stages.
 fn jtl_counts() -> BTreeMap<String, usize> {
     (0..8).map(|stage| (format!("j{stage}.q"), 2)).collect()
 }
@@ -89,7 +89,8 @@ fn splitter_counts() -> BTreeMap<String, usize> {
 
 /// Vector 1+1+1 over three clocks. Both data inputs cancel in `xor_ab` and store in `and_ab`.
 /// `cin` is delayed one cycle; `and_ab` is delayed one cycle into the OR; `sum` is delayed
-/// one cycle so it lines up with `cout`. Sum and cout are each one pulse.
+/// one cycle so it lines up with `cout`. `jtl_and` and `jtl_sum` let that DFF hold close
+/// after the gate clk-to-q. Sum and cout are each one pulse.
 fn adder_counts() -> BTreeMap<String, usize> {
     let mut counts = BTreeMap::new();
     for name in ["c0", "c1", "c2", "c3", "c4", "c5", "c6"] {
@@ -101,7 +102,7 @@ fn adder_counts() -> BTreeMap<String, usize> {
         counts.insert(format!("{name}.q1"), 1);
     }
     for name in [
-        "and_ab", "dff_cin", "xor_sum", "dff_and", "dff_sum", "or_cout",
+        "and_ab", "dff_cin", "xor_sum", "jtl_and", "dff_and", "jtl_sum", "dff_sum", "or_cout",
     ] {
         counts.insert(format!("{name}.q"), 1);
     }

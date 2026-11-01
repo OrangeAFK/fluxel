@@ -1,7 +1,7 @@
 {
   "name": "OR",
   "family": "rsfq",
-  "provenance": "behavioral",
+  "provenance": "characterized",
   "ports": { "in": ["a", "b", "clk"], "out": ["q"] },
   "faces": { "a": "W", "b": "N", "clk": "S", "q": "E" },
   "states": ["none", "seen"],
@@ -39,6 +39,5 @@
   "ref_jj": { "a": "B1", "b": "B4", "clk": "B10", "q": "B12" },
   "netlist": "lib/rsfqlib/RSFQlib/mitll_OR2/THmitll_OR2_v3p0_extracted.cir",
   "lut": "lib/families/rsfq/OR.lut.cbor",
-  "notes": "TODO-M2: output delays are 5000 fs and windows are 1000 fs, placeholders. Models lib/rsfqlib/RSFQlib/mitll_OR2/THmitll_OR2_v3p0.v. jj_count is 12, from B1-B12 in THmitll_OR2_v3p0_base.cir.",
-  "delays": { "t_clk_q": 5000, "t_setup_a": 1000, "t_setup_b": 1000 }
+  "notes": "Models lib/rsfqlib/RSFQlib/mitll_OR2/THmitll_OR2_v3p0.v. jj_count is 12, from B1-B12 in THmitll_OR2_v3p0_base.cir."
 }

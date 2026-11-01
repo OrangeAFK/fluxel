@@ -3,7 +3,8 @@
 use std::path::{Path, PathBuf};
 
 use fx_cli::{
-    CliError, hash_hex, load_cells, parse_until, read_bytes, read_text, simulate, write_bytes,
+    CliError, hash_hex, load_cells, load_luts, parse_until, read_bytes, read_text, simulate,
+    write_bytes,
 };
 use fx_flow::{DeckOpts, export_josim_with};
 use fx_ir::design::Design;
@@ -42,9 +43,10 @@ struct SimArgs {
 fn run_sim(args: &[String]) -> Result<u8, CliError> {
     let parsed = parse_sim(args)?;
     let cells = load_cells(&parsed.lib)?;
+    let luts = load_luts(&parsed.lib)?;
     let design = read_text(&parsed.design)?;
     let stimulus = read_text(&parsed.stimulus)?;
-    let report = simulate(&design, &stimulus, cells, parsed.until)?;
+    let report = simulate(&design, &stimulus, cells, luts, parsed.until)?;
     if let Some(path) = &parsed.out {
         write_bytes(path, report.pulses.as_bytes())?;
     }

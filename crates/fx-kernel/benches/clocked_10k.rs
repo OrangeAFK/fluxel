@@ -6,6 +6,7 @@ use std::hint::black_box;
 use criterion::{BatchSize, Criterion, Throughput, criterion_group, criterion_main};
 use fx_ir::cell::{CellDef, Face, Fire, Ports, Provenance, Transition};
 use fx_ir::design::{Design, Instance, Net, PinRef, Wire};
+use fx_ir::lut::LutBundle;
 use fx_ir::stimulus::Stimulus;
 use fx_kernel::{KernelError, Simulator, ViolationPolicy};
 use fx_time::Femtos;
@@ -193,6 +194,7 @@ fn new_sim(built: &Built) -> Result<Simulator, KernelError> {
     Simulator::new(
         built.design.clone(),
         built.cells.clone(),
+        BTreeMap::new(),
         built.stimulus.clone(),
         ViolationPolicy::Record,
         SNAPSHOT_EVERY,
@@ -361,5 +363,165 @@ fn dff() -> CellDef {
     }
 }
 
-criterion_group!(benches, clocked_10k);
+fn lut_chain(c: &mut Criterion) {
+    let built = lut_built();
+    let mut group = c.benchmark_group("kernel");
+    group.bench_function("lut_chain", |b| {
+        b.iter_batched(
+            || ready(new_lut(&built)),
+            |mut sim| {
+                finish(&mut sim);
+                black_box(sim.log().events().len())
+            },
+            BatchSize::SmallInput,
+        );
+    });
+    group.finish();
+}
+
+struct LutBuilt {
+    design: Design,
+    cells: BTreeMap<String, CellDef>,
+    luts: BTreeMap<String, LutBundle>,
+    stimulus: Stimulus,
+}
+
+fn lut_built() -> LutBuilt {
+    const N: usize = 32;
+    let bundle = LutBundle::from_json(
+        r#"{
+        "cell": "GATE",
+        "entries": {
+            "t_a_q": {
+                "axes": [
+                    {"name": "bias_frac", "points": ["0.80", "1.20"]},
+                    {"name": "dt_prev_fs", "points": ["6000", "200000"]}
+                ],
+                "values": [1000, 3000, 2000, 4000],
+                "interpolation": "multilinear",
+                "valid": {
+                    "bias_frac": {"lo": "0.80", "hi": "1.20"},
+                    "dt_prev_fs": {"lo": "6000", "hi": "200000"}
+                },
+                "sigma_fs": 0
+            }
+        },
+        "source": {
+            "josim_version": "josim-test",
+            "netlist_sha256": "abababababababababababababababababababababababababababababababab",
+            "sweep_sha256": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+            "timestep_fs": 25
+        }
+    }"#,
+    )
+    .unwrap_or_else(|err| panic!("lut bench bundle: {err}"));
+    let mut instances = BTreeMap::new();
+    for i in 0..N {
+        instances.insert(
+            format!("u{i}"),
+            Instance {
+                family: "rsfq".into(),
+                cell: "GATE".into(),
+                bias_domain: "b".into(),
+                macro_parent: None,
+            },
+        );
+    }
+    let mut nets = vec![Net {
+        driver: PinRef::Port { port: "a".into() },
+        sink: PinRef::Instance {
+            instance: "u0".into(),
+            port: "a".into(),
+        },
+        wire: Wire::Direct,
+    }];
+    for i in 0..N - 1 {
+        nets.push(Net {
+            driver: PinRef::Instance {
+                instance: format!("u{i}"),
+                port: "q".into(),
+            },
+            sink: PinRef::Instance {
+                instance: format!("u{}", i + 1),
+                port: "a".into(),
+            },
+            wire: Wire::Direct,
+        });
+    }
+    let last = N - 1;
+    nets.push(Net {
+        driver: PinRef::Instance {
+            instance: format!("u{last}"),
+            port: "q".into(),
+        },
+        sink: PinRef::Port { port: "q".into() },
+        wire: Wire::Direct,
+    });
+    let mut cells = BTreeMap::new();
+    cells.insert(
+        "GATE".into(),
+        CellDef {
+            name: "GATE".into(),
+            family: "rsfq".into(),
+            provenance: Provenance::Characterized,
+            ports: Ports {
+                inputs: vec!["a".into()],
+                outputs: vec!["q".into()],
+            },
+            faces: BTreeMap::from([("a".into(), Face::W), ("q".into(), Face::E)]),
+            states: vec!["s".into()],
+            initial: "s".into(),
+            transitions: vec![Transition {
+                from: "s".into(),
+                on: "a".into(),
+                to: "s".into(),
+                fire: vec![Fire {
+                    port: "q".into(),
+                    delay: "t_a_q".into(),
+                }],
+                note: None,
+            }],
+            constraints: vec![],
+            jj_count: Some(1),
+            bias_ua: None,
+            netlist: Some("n".into()),
+            lut: Some("l".into()),
+            ref_jj: BTreeMap::new(),
+            notes: None,
+            delays: BTreeMap::new(),
+        },
+    );
+    let mut luts = BTreeMap::new();
+    luts.insert("GATE".into(), bundle);
+    let mut pulses = BTreeMap::new();
+    pulses.insert("a".into(), (0..8).map(|i| Femtos(i * 100_000)).collect());
+    LutBuilt {
+        design: Design {
+            instances,
+            nets,
+            ports: Ports {
+                inputs: vec!["a".into()],
+                outputs: vec!["q".into()],
+            },
+            clock_domains: BTreeMap::new(),
+            bias_domains: BTreeSet::from(["b".into()]),
+        },
+        cells,
+        luts,
+        stimulus: Stimulus(pulses),
+    }
+}
+
+fn new_lut(built: &LutBuilt) -> Result<Simulator, KernelError> {
+    Simulator::new(
+        built.design.clone(),
+        built.cells.clone(),
+        built.luts.clone(),
+        built.stimulus.clone(),
+        ViolationPolicy::Record,
+        SNAPSHOT_EVERY,
+    )
+}
+
+criterion_group!(benches, clocked_10k, lut_chain);
 criterion_main!(benches);

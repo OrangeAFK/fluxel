@@ -8,6 +8,7 @@
 use std::collections::BTreeMap;
 
 use fx_ir::cell::{CellDef, Constraint, ConstraintKind, Provenance};
+use fx_ir::lut::{AxisQuery, LutBundle, LutEntry};
 use fx_time::Femtos;
 use thiserror::Error;
 
@@ -51,6 +52,18 @@ pub enum KernelError {
     BadSnapshotInterval,
     #[error("stimulus port {port} is not connected")]
     UnconnectedPort { port: String },
+    #[error("cell {cell} has no LUT bundle")]
+    MissingLut { cell: String },
+    #[error("LUT entry {name} is missing on cell {cell}")]
+    MissingLutEntry { cell: String, name: String },
+    #[error("unknown bias domain {domain}")]
+    UnknownBiasDomain { domain: String },
+    #[error("bias fraction is not finite")]
+    BadBias,
+    #[error("LUT entry {entry} has unknown axis {axis}")]
+    UnknownAxis { entry: String, axis: String },
+    #[error("LUT lookup failed: {0}")]
+    Lut(String),
 }
 
 /// One instance, its last input time on each port, and the append-only log.
@@ -119,6 +132,9 @@ impl Kernel {
             port,
             t,
             log_illegal: false,
+            last_input: self.last_input_time,
+            bias: 1.0,
+            bundle: None,
         })?;
         if applied.halt {
             self.log.extend(applied.events);
@@ -163,6 +179,9 @@ pub(crate) struct ApplyRequest<'a> {
     port: &'a str,
     t: Femtos,
     log_illegal: bool,
+    last_input: Option<Femtos>,
+    bias: f64,
+    bundle: Option<&'a LutBundle>,
 }
 
 pub(crate) fn apply_input(request: ApplyRequest<'_>) -> Result<Applied, KernelError> {
@@ -175,8 +194,21 @@ pub(crate) fn apply_input(request: ApplyRequest<'_>) -> Result<Applied, KernelEr
         port,
         t,
         log_illegal,
+        last_input,
+        bias,
+        bundle,
     } = request;
-    let mut events = breaches(inst, cell, arrivals, port, t)?;
+    let clock = Clock {
+        inst,
+        cell,
+        arrivals,
+        port,
+        t,
+        last_input,
+        bias,
+        bundle,
+    };
+    let mut events = breaches(&clock)?;
     let halt = policy == ViolationPolicy::Halt
         && events.iter().any(|event| {
             matches!(
@@ -210,7 +242,9 @@ pub(crate) fn apply_input(request: ApplyRequest<'_>) -> Result<Applied, KernelEr
         });
     };
     for output in &transition.fire {
-        let at = checked_add(t, constant(cell, &output.delay)?)?;
+        let (delay, notes) = clock.sample(&output.delay)?;
+        events.extend(notes);
+        let at = checked_add(t, delay)?;
         events.push(LogEvent::Fired {
             t: at,
             inst: inst.to_string(),
@@ -224,51 +258,150 @@ pub(crate) fn apply_input(request: ApplyRequest<'_>) -> Result<Applied, KernelEr
     })
 }
 
-fn breaches(
-    inst: &str,
-    cell: &CellDef,
-    arrivals: &BTreeMap<String, Femtos>,
-    port: &str,
+struct Clock<'a> {
+    inst: &'a str,
+    cell: &'a CellDef,
+    arrivals: &'a BTreeMap<String, Femtos>,
+    port: &'a str,
     t: Femtos,
-) -> Result<Vec<LogEvent>, KernelError> {
-    let mut events = Vec::new();
-    for constraint in &cell.constraints {
-        if let Some(event) = breach(inst, cell, arrivals, constraint, port, t)? {
-            events.push(event);
+    last_input: Option<Femtos>,
+    bias: f64,
+    bundle: Option<&'a LutBundle>,
+}
+
+impl Clock<'_> {
+    /// Delay or window. An out-of-range axis is logged and the value is clamped.
+    fn sample(&self, name: &str) -> Result<(Femtos, Vec<LogEvent>), KernelError> {
+        let Some(bundle) = self.bundle else {
+            return Ok((constant(self.cell, name)?, Vec::new()));
+        };
+        let entry = bundle
+            .entries
+            .get(name)
+            .ok_or_else(|| KernelError::MissingLutEntry {
+                cell: self.cell.name.clone(),
+                name: name.to_string(),
+            })?;
+        let mut query = BTreeMap::new();
+        let mut point = BTreeMap::new();
+        for axis in &entry.axes {
+            let coord = self.coordinate(name, entry, &axis.name)?;
+            let units = coord
+                .units(&axis.name)
+                .map_err(|err| KernelError::Lut(err.to_string()))?;
+            point.insert(axis.name.clone(), units);
+            query.insert(axis.name.clone(), coord);
         }
+        let (value, valid) = bundle
+            .lookup(name, &query)
+            .map_err(|err| KernelError::Lut(err.to_string()))?;
+        let mut notes = Vec::new();
+        if !valid {
+            notes.push(LogEvent::Uncharacterized {
+                t: self.t,
+                inst: self.inst.to_string(),
+                entry: name.to_string(),
+                point,
+            });
+        }
+        Ok((value, notes))
+    }
+
+    fn coordinate(
+        &self,
+        entry_name: &str,
+        entry: &LutEntry,
+        axis: &str,
+    ) -> Result<AxisQuery, KernelError> {
+        match axis {
+            "bias_frac" => Ok(AxisQuery::Fraction(self.bias)),
+            "dt_prev_fs" => Ok(AxisQuery::Time(self.dt_prev(entry)?)),
+            "data_clock_offset_fs" => Ok(AxisQuery::Time(self.data_clock()?)),
+            "in_in_offset_fs" => Ok(AxisQuery::Time(self.in_in()?)),
+            other => Err(KernelError::UnknownAxis {
+                entry: entry_name.to_string(),
+                axis: other.to_string(),
+            }),
+        }
+    }
+
+    fn dt_prev(&self, entry: &LutEntry) -> Result<Femtos, KernelError> {
+        if let Some(prev) = self.last_input {
+            return checked_sub(self.t, prev);
+        }
+        valid_hi(entry, "dt_prev_fs")
+    }
+
+    fn data_clock(&self) -> Result<Femtos, KernelError> {
+        if self.port != "clk" {
+            return Ok(Femtos(0));
+        }
+        let latest = self
+            .arrivals
+            .iter()
+            .filter(|(name, _)| name.as_str() != "clk")
+            .map(|(_, time)| time.0)
+            .max();
+        match latest {
+            Some(prev) => checked_sub(self.t, Femtos(prev)),
+            None => Ok(Femtos(0)),
+        }
+    }
+
+    fn in_in(&self) -> Result<Femtos, KernelError> {
+        let a = if self.port == "a" {
+            Some(self.t)
+        } else {
+            self.arrivals.get("a").copied()
+        };
+        let b = if self.port == "b" {
+            Some(self.t)
+        } else {
+            self.arrivals.get("b").copied()
+        };
+        match (a, b) {
+            (Some(left), Some(right)) => checked_sub(right, left),
+            _ => Ok(Femtos(0)),
+        }
+    }
+}
+
+fn breaches(clock: &Clock<'_>) -> Result<Vec<LogEvent>, KernelError> {
+    let mut events = Vec::new();
+    for constraint in &clock.cell.constraints {
+        events.extend(breach(clock, constraint)?);
     }
     Ok(events)
 }
 
-fn breach(
-    inst: &str,
-    cell: &CellDef,
-    arrivals: &BTreeMap<String, Femtos>,
-    constraint: &Constraint,
-    port: &str,
-    t: Femtos,
-) -> Result<Option<LogEvent>, KernelError> {
-    let Some(partner) = partner(constraint, port) else {
-        return Ok(None);
+fn breach(clock: &Clock<'_>, constraint: &Constraint) -> Result<Vec<LogEvent>, KernelError> {
+    let Some(partner) = partner(constraint, clock.port) else {
+        return Ok(Vec::new());
     };
-    let Some(arrived) = arrivals.get(partner) else {
-        return Ok(None);
+    let Some(arrived) = clock.arrivals.get(partner) else {
+        return Ok(Vec::new());
     };
-    let separation = t.0.checked_sub(arrived.0).ok_or(KernelError::Overflow)?;
-    let window = constant(cell, &constraint.window)?.0;
+    let separation = clock
+        .t
+        .0
+        .checked_sub(arrived.0)
+        .ok_or(KernelError::Overflow)?;
+    let (window, mut events) = clock.sample(&constraint.window)?;
     let slack = separation
-        .checked_sub(window)
+        .checked_sub(window.0)
         .ok_or(KernelError::Overflow)?;
     if slack > 0 {
-        return Ok(None);
+        return Ok(events);
     }
     let slack = Femtos(slack);
-    let inst = inst.to_string();
-    Ok(Some(match constraint.kind {
+    let t = clock.t;
+    let inst = clock.inst.to_string();
+    events.push(match constraint.kind {
         ConstraintKind::Setup => LogEvent::SetupViolation { t, inst, slack },
         ConstraintKind::Hold => LogEvent::HoldViolation { t, inst, slack },
         ConstraintKind::Collision => LogEvent::Collision { t, inst, slack },
-    }))
+    });
+    Ok(events)
 }
 
 fn partner<'a>(constraint: &'a Constraint, port: &str) -> Option<&'a str> {
@@ -299,9 +432,28 @@ fn constant(cell: &CellDef, name: &str) -> Result<Femtos, KernelError> {
         .ok_or(KernelError::NeedsConstantDelays)
 }
 
+fn valid_hi(entry: &LutEntry, axis: &str) -> Result<Femtos, KernelError> {
+    let bound = entry
+        .valid
+        .get(axis)
+        .ok_or_else(|| KernelError::Lut(format!("{axis} has no valid box")))?;
+    let fs = bound
+        .hi
+        .parse::<i64>()
+        .map_err(|_| KernelError::Lut(format!("bad {axis} bound {}", bound.hi)))?;
+    Ok(Femtos(fs))
+}
+
 fn checked_add(left: Femtos, right: Femtos) -> Result<Femtos, KernelError> {
     left.0
         .checked_add(right.0)
+        .map(Femtos)
+        .ok_or(KernelError::Overflow)
+}
+
+fn checked_sub(left: Femtos, right: Femtos) -> Result<Femtos, KernelError> {
+    left.0
+        .checked_sub(right.0)
         .map(Femtos)
         .ok_or(KernelError::Overflow)
 }

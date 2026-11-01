@@ -1,12 +1,14 @@
 //! Design runner: a binary heap, constraint checks, and snapshot rewind.
 //!
-//! Wire delay is 0. Output time is the cell's constant delay.
+//! Wire delay is 0. A behavioral cell uses its constant delay. Any other cell
+//! uses its LUT at the bias fraction in effect when the input is applied.
 
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BinaryHeap};
 
-use fx_ir::cell::CellDef;
+use fx_ir::cell::{CellDef, Provenance};
 use fx_ir::design::{Design, PinRef};
+use fx_ir::lut::LutBundle;
 use fx_ir::stimulus::Stimulus;
 use fx_time::Femtos;
 
@@ -20,6 +22,8 @@ use crate::{
 pub struct Simulator {
     design: Design,
     cells: BTreeMap<String, CellDef>,
+    luts: BTreeMap<String, LutBundle>,
+    bias: BTreeMap<String, f64>,
     policy: ViolationPolicy,
     snapshot_every: u64,
     instances: BTreeMap<String, InstanceRun>,
@@ -36,6 +40,7 @@ pub struct Simulator {
 struct InstanceRun {
     state: String,
     arrivals: BTreeMap<String, Femtos>,
+    last_input: Option<Femtos>,
 }
 
 #[derive(Debug, Clone)]
@@ -47,6 +52,7 @@ struct Snapshot {
     seq: u64,
     log_len: usize,
     halted: bool,
+    bias: BTreeMap<String, f64>,
 }
 
 /// Heap order is the reverse of `(t, target, port, seq)`, so the earliest event pops first.
@@ -78,9 +84,13 @@ impl Ord for Queued {
 
 impl Simulator {
     /// Queue `stimulus` and take the initial snapshot. `snapshot_every` is at least 1.
+    ///
+    /// Each bias domain starts at fraction `1.0`. A behavioral cell keeps its
+    /// constant delays. Any other cell reads `luts`.
     pub fn new(
         design: Design,
         cells: BTreeMap<String, CellDef>,
+        luts: BTreeMap<String, LutBundle>,
         stimulus: Stimulus,
         policy: ViolationPolicy,
         snapshot_every: u64,
@@ -95,20 +105,44 @@ impl Simulator {
                     name: instance.cell.clone(),
                 });
             };
-            if !constants_ready(cell) {
-                return Err(KernelError::NeedsConstantDelays);
+            if cell.provenance == Provenance::Behavioral {
+                if !constants_ready(cell) {
+                    return Err(KernelError::NeedsConstantDelays);
+                }
+            } else {
+                let Some(bundle) = luts.get(&instance.cell) else {
+                    return Err(KernelError::MissingLut {
+                        cell: instance.cell.clone(),
+                    });
+                };
+                for name in timing_names(cell) {
+                    if !bundle.entries.contains_key(&name) {
+                        return Err(KernelError::MissingLutEntry {
+                            cell: instance.cell.clone(),
+                            name,
+                        });
+                    }
+                }
             }
             instances.insert(
                 id.clone(),
                 InstanceRun {
                     state: cell.initial.clone(),
                     arrivals: BTreeMap::new(),
+                    last_input: None,
                 },
             );
         }
+        let bias = design
+            .bias_domains
+            .iter()
+            .map(|domain| (domain.clone(), 1.0))
+            .collect();
         let mut sim = Self {
             design,
             cells,
+            luts,
+            bias,
             policy,
             snapshot_every,
             instances,
@@ -157,6 +191,27 @@ impl Simulator {
     /// Append-only record. [`Self::seek`] is what truncates it.
     pub fn log(&self) -> &EventLog {
         &self.log
+    }
+
+    /// Set one domain's bias fraction. Later evaluations use it. Events already
+    /// queued keep the delay they were given. Before the first step, the initial
+    /// snapshot is updated so a seek back to the start keeps this fraction.
+    pub fn set_bias(&mut self, domain: &str, frac: f64) -> Result<(), KernelError> {
+        if !self.design.bias_domains.contains(domain) {
+            return Err(KernelError::UnknownBiasDomain {
+                domain: domain.to_string(),
+            });
+        }
+        if !frac.is_finite() {
+            return Err(KernelError::BadBias);
+        }
+        self.bias.insert(domain.to_string(), frac);
+        if self.steps == 0
+            && let Some(snap) = self.snapshots.first_mut()
+        {
+            snap.bias = self.bias.clone();
+        }
+        Ok(())
     }
 
     fn enqueue_stimulus(&mut self, stimulus: &Stimulus) -> Result<(), KernelError> {
@@ -232,6 +287,24 @@ impl Simulator {
                 instance: event.target.clone(),
             });
         };
+        let bundle = if cell.provenance == Provenance::Behavioral {
+            None
+        } else {
+            Some(
+                self.luts
+                    .get(&instance.cell)
+                    .ok_or_else(|| KernelError::MissingLut {
+                        cell: instance.cell.clone(),
+                    })?,
+            )
+        };
+        let bias = self
+            .bias
+            .get(&instance.bias_domain)
+            .copied()
+            .ok_or_else(|| KernelError::UnknownBiasDomain {
+                domain: instance.bias_domain.clone(),
+            })?;
         apply_input(ApplyRequest {
             inst: &event.target,
             cell,
@@ -241,6 +314,9 @@ impl Simulator {
             port: &event.port,
             t: event.t,
             log_illegal: true,
+            last_input: run.last_input,
+            bias,
+            bundle,
         })
     }
 
@@ -264,6 +340,7 @@ impl Simulator {
                 run.state = next;
             }
             run.arrivals.insert(event.port, event.t);
+            run.last_input = Some(event.t);
         }
         for (t, port) in fires {
             self.schedule_output(&event.target, &port, t);
@@ -295,6 +372,7 @@ impl Simulator {
             seq: self.seq,
             log_len: self.log.len(),
             halted: self.halted,
+            bias: self.bias.clone(),
         });
     }
 
@@ -322,6 +400,20 @@ impl Simulator {
         self.seq = snap.seq;
         self.log.truncate(snap.log_len);
         self.halted = snap.halted;
+        self.bias = snap.bias;
         self.snapshots.truncate(index + 1);
     }
+}
+
+fn timing_names(cell: &CellDef) -> Vec<String> {
+    let mut names = Vec::new();
+    for transition in &cell.transitions {
+        for fire in &transition.fire {
+            names.push(fire.delay.clone());
+        }
+    }
+    for constraint in &cell.constraints {
+        names.push(constraint.window.clone());
+    }
+    names
 }

@@ -734,7 +734,16 @@ fn rsfq_library_cells_parse() {
         let cell = CellDef::parse(&text).unwrap_or_else(|err| panic!("parse {file_name}: {err}"));
         assert_eq!(cell.name, name, "{file_name}");
         assert_eq!(cell.family, "rsfq");
-        assert_eq!(cell.provenance, Provenance::Behavioral);
+        let behavioral = matches!(name, "TFF" | "MERGE" | "NDRO" | "SFQDC");
+        assert_eq!(
+            cell.provenance,
+            if behavioral {
+                Provenance::Behavioral
+            } else {
+                Provenance::Characterized
+            },
+            "{name}"
+        );
         if name == "TFF" {
             assert_eq!(cell.lut, None);
         } else {
@@ -768,10 +777,9 @@ fn rsfq_library_cells_parse() {
     for (name, jj) in expected {
         let cell = &found[name];
         assert_eq!(cell.jj_count, jj, "{name}");
-        if name == "JTL" {
-            assert_eq!(cell.delays.get("t_a_q"), Some(&Femtos(1819)));
-            assert_eq!(cell.delays.len(), 1);
-        } else {
+        let behavioral = matches!(name, "TFF" | "MERGE" | "NDRO" | "SFQDC");
+        if behavioral {
+            assert!(!cell.delays.is_empty(), "{name}");
             for (key, delay) in &cell.delays {
                 assert!(
                     delay.0 == 5_000 || delay.0 == 1_000,
@@ -779,6 +787,8 @@ fn rsfq_library_cells_parse() {
                     delay.0
                 );
             }
+        } else {
+            assert!(cell.delays.is_empty(), "{name}");
         }
     }
     assert_eq!(

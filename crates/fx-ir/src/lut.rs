@@ -38,6 +38,13 @@ pub enum AxisQuery {
     Time(Femtos),
 }
 
+impl AxisQuery {
+    /// Integer grid coordinate [`LutBundle::lookup`] uses for `axis`.
+    pub fn units(self, axis: &str) -> Result<i64, LutError> {
+        query_units(axis, &self)
+    }
+}
+
 /// Inclusive valid bound. `lo` and `hi` use the same decimal text as axis points.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]

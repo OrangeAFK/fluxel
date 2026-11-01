@@ -442,7 +442,7 @@ The analog solver (M3) is built beside the main chain and joins at M5. The stati
 
 ### M3 — Analog solver → Gate B
 
-- [ ] 3.1 Netlist parser for the RSFQlib `.cir` subset, with tests
+- [x] 3.1 Netlist parser for the RSFQlib `.cir` subset, with tests
 - [ ] 3.2 MNA assembly + trapezoidal integration; Mode B (Newton) first
 - [ ] 3.3 Mode A (explicit sin φ, constant matrix)
 - [ ] 3.4 Sources: DC, PWL, PULSE, SIN; Johnson noise

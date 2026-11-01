@@ -15,6 +15,26 @@ impl fmt::Display for Loc {
     }
 }
 
+/// The reference solver could not finish a transient.
+#[derive(Debug, Error)]
+pub enum SolveError {
+    /// Newton stopped at `max_newton` with a correction still over tolerance.
+    #[error("newton did not converge at t = {time_s} s on node {node}")]
+    Diverged { time_s: f64, node: String },
+    /// The sparse factorization failed.
+    #[error("singular matrix at t = {time_s} s")]
+    Singular { time_s: f64 },
+    /// A device value or an unsupported card.
+    #[error("{name}: {message}")]
+    Element { name: String, message: String },
+    /// The request itself is not a transient the solver can run.
+    #[error("{message}")]
+    Input { message: String },
+    /// `extract_crossings` was given unequal slices.
+    #[error("time and phase traces differ in length")]
+    TraceLength,
+}
+
 /// A deck could not be parsed or flattened.
 #[derive(Debug, Error)]
 pub enum NetlistError {

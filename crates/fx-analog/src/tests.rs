@@ -387,3 +387,452 @@ fn collect_named(dir: &Path, suffix: &str, out: &mut Vec<PathBuf>) {
         }
     }
 }
+
+const PI: f64 = std::f64::consts::PI;
+
+fn assert_crossings(got: &PhaseCrossings, pulses: &[(f64, i32)], antipulses: &[(f64, i32)]) {
+    let up: Vec<(f64, i32)> = got.pulses.iter().map(|c| (c.t, c.k)).collect();
+    let down: Vec<(f64, i32)> = got.antipulses.iter().map(|c| (c.t, c.k)).collect();
+    assert_eq!(up, pulses);
+    assert_eq!(down, antipulses);
+}
+
+#[test]
+fn single_2pi_step_crosses_pi_halfway() {
+    // Same samples as tools/char/tests/test_extract.py::test_single_2pi_step.
+    let got = extract_crossings(&[0.0, 1.0, 2.0, 3.0], &[0.0, 0.0, 2.0 * PI, 2.0 * PI]).unwrap();
+    assert_crossings(&got, &[(1.5, 0)], &[]);
+}
+
+#[test]
+fn pulse_train_crosses_each_odd_pi() {
+    let phase = [0.0, 2.0 * PI, 2.0 * PI, 4.0 * PI, 4.0 * PI, 6.0 * PI];
+    let got = extract_crossings(&[0.0, 1.0, 2.0, 3.0, 4.0, 5.0], &phase).unwrap();
+    assert_crossings(&got, &[(0.5, 0), (2.5, 1), (4.5, 2)], &[]);
+}
+
+#[test]
+fn noisy_step_shifts_the_crossing_and_adds_none() {
+    let phase = [
+        PI / 10.0,
+        -PI / 5.0,
+        2.0 * PI + PI / 10.0,
+        2.0 * PI + PI / 5.0,
+    ];
+    let got = extract_crossings(&[0.0, 1.0, 2.0, 3.0], &phase).unwrap();
+    assert_crossings(&got, &[(1.0 + 12.0 / 23.0, 0)], &[]);
+}
+
+#[test]
+fn a_level_that_lands_on_a_sample_belongs_to_the_arriving_interval() {
+    let up = extract_crossings(&[0.0, 2.0, 3.0], &[0.0, PI, 2.0 * PI]).unwrap();
+    assert_crossings(&up, &[(2.0, 0)], &[]);
+    let down = extract_crossings(&[0.0, 2.0, 3.0], &[2.0 * PI, PI, 0.0]).unwrap();
+    assert_crossings(&down, &[], &[(2.0, 0)]);
+}
+
+#[test]
+fn femtoseconds_match_python_half_even() {
+    // pulse_log uses int(round(t * 1e15)), and Python 3 rounds halves to even.
+    assert_eq!(femtoseconds(0.5e-15), 0);
+    assert_eq!(femtoseconds(1.5e-15), 2);
+    assert_eq!(femtoseconds(2.5e-15), 2);
+    assert_eq!(femtoseconds(1.2e-15), 1);
+}
+
+fn gap_jj(rtype: i64, r0: f64, rn: f64) -> Jj {
+    Jj {
+        name: "B1".into(),
+        n1: "j".into(),
+        n2: "0".into(),
+        ic: 1e-3,
+        vg: 2.8e-3,
+        c: 0.0,
+        r0,
+        rn,
+        rtype,
+        deltav: 1e-4,
+        icfct: PI / 4.0,
+        phi: 0.0,
+    }
+}
+
+fn qp_current(jj: &Jj, voltage: f64) -> f64 {
+    let qp = quasiparticle(jj, voltage).unwrap();
+    qp.g * voltage + qp.it
+}
+
+#[test]
+fn rtype_0_is_ohmic_through_the_gap() {
+    let jj = gap_jj(0, 5.0, 5.0);
+    for voltage in [1e-3, 2.8e-3, 3e-3, -2.8e-3] {
+        let qp = quasiparticle(&jj, voltage).unwrap();
+        assert!((qp.g - 0.2).abs() < 1e-12, "G {}", qp.g);
+        assert_eq!(qp.it, 0.0);
+        assert!((qp_current(&jj, voltage) - voltage / 5.0).abs() < 1e-15);
+    }
+}
+
+#[test]
+fn rtype_1_matches_subgap_transition_and_normal() {
+    let jj = gap_jj(1, 30.0, 5.0);
+    let sub = quasiparticle(&jj, 1e-3).unwrap();
+    assert!((sub.g - 1.0 / 30.0).abs() < 1e-12);
+    assert_eq!(sub.it, 0.0);
+
+    let normal = quasiparticle(&jj, 3e-3).unwrap();
+    assert!((normal.g - 0.2).abs() < 1e-12);
+    assert_eq!(normal.it, 0.0);
+    assert!((qp_current(&jj, 3e-3) - 6e-4).abs() < 1e-15);
+
+    // Inside (vg - ΔV/2, vg + ΔV/2). G and it are the JoSIM transition arm.
+    let up = quasiparticle(&jj, 2.8e-3).unwrap();
+    assert!((up.g - 12.732395447351628).abs() < 1e-9);
+    assert!((up.it - -0.034922420813550306).abs() < 1e-12);
+    assert!((qp_current(&jj, 2.8e-3) - 7.28286439034255e-4).abs() < 1e-12);
+
+    let down = quasiparticle(&jj, -2.8e-3).unwrap();
+    assert!((down.g - up.g).abs() < 1e-12);
+    assert!((down.it + up.it).abs() < 1e-12);
+    assert!((qp_current(&jj, -2.8e-3) + 7.28286439034255e-4).abs() < 1e-12);
+}
+
+#[test]
+fn empty_gap_window_does_not_divide_by_deltav() {
+    let mut jj = gap_jj(1, 30.0, 5.0);
+    jj.deltav = 0.0;
+    let below = quasiparticle(&jj, 2.8e-3 - 1e-9).unwrap();
+    assert!((below.g - 1.0 / 30.0).abs() < 1e-12 && below.it == 0.0);
+    let above = quasiparticle(&jj, 2.8e-3).unwrap();
+    assert!((above.g - 0.2).abs() < 1e-12 && above.it == 0.0);
+}
+
+#[test]
+fn transition_with_nonpositive_icfct_is_an_error() {
+    let mut jj = gap_jj(1, 30.0, 5.0);
+    jj.icfct = 0.0;
+    assert!(quasiparticle(&jj, 2.8e-3).is_err());
+}
+
+fn config(h: f64, t_stop: f64, nodes: &[&str], junctions: &[&str]) -> SolveConfig {
+    SolveConfig {
+        h,
+        t_stop,
+        nodes: nodes.iter().map(|name| (*name).to_string()).collect(),
+        junctions: junctions.iter().map(|name| (*name).to_string()).collect(),
+        phase_tol: 1e-10,
+        current_tol: 1e-15,
+        max_newton: 32,
+    }
+}
+
+fn overdamped(current: f64, h: f64, t_stop: f64) -> Solution {
+    let ic = 100e-6;
+    let r = 2.0;
+    let elements = [
+        Element::I {
+            name: "IB".into(),
+            n1: "0".into(),
+            n2: "j".into(),
+            wave: Wave::Dc(current),
+        },
+        Element::Jj(Jj {
+            name: "B1".into(),
+            n1: "j".into(),
+            n2: "0".into(),
+            ic,
+            vg: 2.8e-3,
+            c: 0.0,
+            r0: r,
+            rn: r,
+            rtype: 0,
+            deltav: 1e-4,
+            icfct: PI / 4.0,
+            phi: 0.0,
+        }),
+    ];
+    solve(&elements, &config(h, t_stop, &["j"], &["B1"])).unwrap()
+}
+
+fn trap_between(time: &[f64], value: &[f64], t0: f64, t1: f64) -> f64 {
+    let mut samples = Vec::new();
+    samples.push((t0, interp(time, value, t0)));
+    for (t, v) in time.iter().zip(value) {
+        if *t > t0 && *t < t1 {
+            samples.push((*t, *v));
+        }
+    }
+    samples.push((t1, interp(time, value, t1)));
+    let mut area = 0.0;
+    for pair in samples.windows(2) {
+        area += 0.5 * (pair[1].0 - pair[0].0) * (pair[0].1 + pair[1].1);
+    }
+    area
+}
+
+fn interp(time: &[f64], value: &[f64], t: f64) -> f64 {
+    if t <= time[0] {
+        return value[0];
+    }
+    for i in 0..time.len() - 1 {
+        if time[i] <= t && t <= time[i + 1] {
+            let span = time[i + 1] - time[i];
+            if span == 0.0 {
+                return value[i + 1];
+            }
+            let w = (t - time[i]) / span;
+            return value[i] + w * (value[i + 1] - value[i]);
+        }
+    }
+    value[value.len() - 1]
+}
+
+#[test]
+fn pulse_area_is_one_flux_quantum() {
+    let ic = 100e-6;
+    let h = 0.025e-12;
+    let solved = overdamped(2.0 * ic, h, 40e-12);
+    let junction = &solved.junctions["B1"];
+    let crossings = extract_crossings(&junction.time_s, &junction.phase).unwrap();
+    assert!(
+        crossings.pulses.len() >= 2,
+        "pulses {}",
+        crossings.pulses.len()
+    );
+    let t0 = crossings.pulses[0].t;
+    let t1 = crossings.pulses[1].t;
+    let area = trap_between(&junction.time_s, &junction.voltage, t0, t1);
+    assert!(
+        (area - PHI0).abs() / PHI0 < 1e-3,
+        "∫V dt = {area}, Φ₀ = {PHI0}"
+    );
+}
+
+#[test]
+fn overdamped_iv_matches_the_rcsj_curve() {
+    let ic = 100e-6;
+    let r = 2.0;
+    let h = 0.025e-12;
+    // The locking transient decays by only about 1% per 0.025 ps step, so the
+    // second half has to start well after a few dozen time constants.
+    let locked = overdamped(0.5 * ic, h, 80e-12);
+    let junction = &locked.junctions["B1"];
+    let mid = junction.time_s.len() / 2;
+    let mean_abs = junction.voltage[mid..].iter().map(|v| v.abs()).sum::<f64>()
+        / (junction.voltage.len() - mid) as f64;
+    assert!(mean_abs < 1e-6 * ic * r, "locked mean |V| = {mean_abs}");
+
+    for factor in [1.5, 2.0] {
+        let solved = overdamped(factor * ic, h, 80e-12);
+        let junction = &solved.junctions["B1"];
+        let crossings = extract_crossings(&junction.time_s, &junction.phase).unwrap();
+        let t_mid = 40e-12;
+        let pulses: Vec<f64> = crossings
+            .pulses
+            .iter()
+            .map(|pulse| pulse.t)
+            .filter(|t| *t >= t_mid)
+            .collect();
+        assert!(pulses.len() >= 2, "factor {factor} pulses {}", pulses.len());
+        let t_a = pulses[0];
+        let t_b = *pulses.last().unwrap();
+        let rate = (pulses.len() - 1) as f64 / (t_b - t_a);
+        let mean = trap_between(&junction.time_s, &junction.voltage, t_a, t_b) / (t_b - t_a);
+        let expect = r * ((factor * ic).powi(2) - ic * ic).sqrt();
+        assert!(
+            (mean - expect).abs() / expect < 1e-3,
+            "I = {factor} Ic: ⟨V⟩ = {mean}, analytic {expect}"
+        );
+        assert!(
+            (mean - PHI0 * rate).abs() / (PHI0 * rate) < 1e-3,
+            "I = {factor} Ic: ⟨V⟩ = {mean}, Φ₀ f = {}",
+            PHI0 * rate
+        );
+    }
+}
+
+fn series_rc(h: f64, t_stop: f64) -> Solution {
+    let elements = [
+        Element::V {
+            name: "VS".into(),
+            n1: "a".into(),
+            n2: "0".into(),
+            wave: Wave::Dc(1e-3),
+        },
+        Element::R {
+            name: "R1".into(),
+            n1: "a".into(),
+            n2: "b".into(),
+            ohms: 1.0,
+        },
+        Element::C {
+            name: "C1".into(),
+            n1: "b".into(),
+            n2: "0".into(),
+            farads: 1e-12,
+        },
+    ];
+    solve(&elements, &config(h, t_stop, &["b"], &[])).unwrap()
+}
+
+fn rc_error(h: f64) -> f64 {
+    let tau = 1e-12;
+    let v0 = 1e-3;
+    let solved = series_rc(h, tau);
+    let node = &solved.nodes["b"];
+    let mut worst: f64 = 0.0;
+    for (t, v) in node.time_s.iter().zip(&node.voltage) {
+        if *t < 0.05 * tau {
+            continue;
+        }
+        let exact = v0 * (1.0 - (-t / tau).exp());
+        worst = worst.max((v - exact).abs());
+    }
+    worst / v0
+}
+
+#[test]
+fn series_rc_matches_the_exponential() {
+    let tau = 1e-12;
+    assert!(
+        rc_error(tau / 2000.0) < 1e-3,
+        "rel {}",
+        rc_error(tau / 2000.0)
+    );
+}
+
+#[test]
+fn halving_the_step_quarters_the_rc_error() {
+    let tau = 1e-12;
+    let coarse = rc_error(tau / 100.0);
+    let fine = rc_error(tau / 200.0);
+    let ratio = coarse / fine;
+    assert!(
+        (3.5..=4.5).contains(&ratio),
+        "err {coarse} -> {fine}, ratio {ratio}"
+    );
+}
+
+#[test]
+fn series_lc_matches_the_sinusoid() {
+    let l: f64 = 1e-12;
+    let c: f64 = 1e-12;
+    let v0: f64 = 1e-3;
+    let omega = 1.0 / (l * c).sqrt();
+    let period = 2.0 * PI / omega;
+    let h = period / 2000.0;
+    let elements = [
+        Element::V {
+            name: "VS".into(),
+            n1: "a".into(),
+            n2: "0".into(),
+            wave: Wave::Dc(v0),
+        },
+        Element::L {
+            name: "L1".into(),
+            n1: "a".into(),
+            n2: "b".into(),
+            henries: l,
+        },
+        Element::C {
+            name: "C1".into(),
+            n1: "b".into(),
+            n2: "0".into(),
+            farads: c,
+        },
+    ];
+    let solved = solve(&elements, &config(h, period, &["a", "b"], &[])).unwrap();
+    let a = &solved.nodes["a"];
+    let b = &solved.nodes["b"];
+    let amp = v0 * (c / l).sqrt();
+    let mut worst: f64 = 0.0;
+    let mut seen = 0;
+    for i in 0..a.time_s.len() {
+        let t = a.time_s[i];
+        if t < 0.05 * period {
+            continue;
+        }
+        let exact = amp * (omega * t).sin();
+        if exact.abs() < 0.2 * amp {
+            continue;
+        }
+        let current = (PHI0 / (2.0 * PI * l)) * (a.phase[i] - b.phase[i]);
+        worst = worst.max((current - exact).abs() / exact.abs());
+        seen += 1;
+    }
+    assert!(seen > 10, "compared {seen} samples");
+    assert!(worst < 1e-3, "rel {worst}");
+}
+
+#[test]
+fn one_newton_iteration_on_a_running_junction_diverges() {
+    let ic = 100e-6;
+    let mut cfg = config(0.025e-12, 0.025e-12, &[], &["B1"]);
+    cfg.max_newton = 1;
+    cfg.phase_tol = 1e-10;
+    let elements = [
+        Element::Jj(Jj {
+            name: "B1".into(),
+            n1: "j".into(),
+            n2: "0".into(),
+            ic,
+            vg: 2.8e-3,
+            c: 0.0,
+            r0: 2.0,
+            rn: 2.0,
+            rtype: 0,
+            deltav: 1e-4,
+            icfct: PI / 4.0,
+            phi: 0.0,
+        }),
+        Element::I {
+            name: "IB".into(),
+            n1: "0".into(),
+            n2: "j".into(),
+            wave: Wave::Dc(2.0 * ic),
+        },
+    ];
+    match solve(&elements, &cfg) {
+        Err(SolveError::Diverged { time_s, node }) => {
+            assert!(time_s > 0.0, "{time_s}");
+            assert_eq!(node, "j");
+        }
+        other => panic!("expected divergence, got {other:?}"),
+    }
+}
+
+#[test]
+fn mutual_inductance_and_transmission_lines_are_rejected() {
+    let k = [Element::K {
+        name: "K1".into(),
+        l1: "L1".into(),
+        l2: "L2".into(),
+        k: 0.5,
+    }];
+    let err = solve(&k, &config(1e-12, 1e-12, &[], &[])).unwrap_err();
+    assert!(err.to_string().contains("K1"), "{err}");
+
+    let tx = [Element::Tx(Tx {
+        name: "T1".into(),
+        n1: "1".into(),
+        n2: "0".into(),
+        n3: "2".into(),
+        n4: "0".into(),
+        z0: 2.0,
+        td: 1e-12,
+    })];
+    let err = solve(&tx, &config(1e-12, 1e-12, &[], &[])).unwrap_err();
+    assert!(err.to_string().contains("T1"), "{err}");
+}
+
+#[test]
+fn a_nonpositive_resistance_is_an_error() {
+    let elements = [Element::R {
+        name: "R1".into(),
+        n1: "a".into(),
+        n2: "0".into(),
+        ohms: 0.0,
+    }];
+    let err = solve(&elements, &config(1e-12, 1e-12, &[], &[])).unwrap_err();
+    assert!(err.to_string().contains("R1"), "{err}");
+}

@@ -1,7 +1,8 @@
 //! Kernel time as integer femtoseconds.
 //!
-//! [`Femtos::from_ps_f64_rounded`] is the only `f64` conversion. Call it only
-//! where a LUT sample crosses into kernel time.
+//! [`Femtos::from_ps_f64_rounded`] and [`Femtos::from_fs_f64_rounded`] are the
+//! only `f64` conversions. Call them only where a LUT sample crosses into
+//! kernel time.
 
 use std::fmt;
 use std::ops::{Add, Sub};
@@ -54,10 +55,10 @@ impl Femtos {
 
     /// Round a picosecond `f64` to the nearest femtosecond, half away from zero.
     ///
-    /// This is the only `f64` conversion on [`Femtos`]. Use it only at a LUT
-    /// boundary, when a table sample enters the kernel. Non-finite inputs
-    /// return [`TimeError::NonFinite`]. Finite values that do not fit in an
-    /// `i64` femtosecond count return [`TimeError::OutOfRange`].
+    /// [`Self::from_fs_f64_rounded`] applies the same rule to a value that is
+    /// already in femtoseconds. Use either only at a LUT boundary. Non-finite
+    /// inputs return [`TimeError::NonFinite`]. Finite values that do not fit
+    /// in an `i64` femtosecond count return [`TimeError::OutOfRange`].
     pub fn from_ps_f64_rounded(ps: f64) -> Result<Self, TimeError> {
         if !ps.is_finite() {
             return Err(TimeError::NonFinite);
@@ -66,13 +67,29 @@ impl Femtos {
         if !fs.is_finite() {
             return Err(TimeError::OutOfRange);
         }
-        let rounded = fs.round();
-        // `i64::MIN` is exactly −2^63. `i64::MAX` is not an `f64`; 2^63 does not fit.
-        if rounded < (i64::MIN as f64) || rounded >= (1u64 << 63) as f64 {
-            return Err(TimeError::OutOfRange);
-        }
-        Ok(Femtos(rounded as i64))
+        round_finite_fs(fs)
     }
+
+    /// Round a femtosecond `f64` to the nearest femtosecond, half away from zero.
+    ///
+    /// This is the LUT lookup boundary. Non-finite inputs return
+    /// [`TimeError::NonFinite`]. Finite values that do not fit in an `i64`
+    /// return [`TimeError::OutOfRange`].
+    pub fn from_fs_f64_rounded(fs: f64) -> Result<Self, TimeError> {
+        if !fs.is_finite() {
+            return Err(TimeError::NonFinite);
+        }
+        round_finite_fs(fs)
+    }
+}
+
+fn round_finite_fs(fs: f64) -> Result<Femtos, TimeError> {
+    let rounded = fs.round();
+    // `i64::MIN` is exactly −2^63. `i64::MAX` is not an `f64`; 2^63 does not fit.
+    if rounded < (i64::MIN as f64) || rounded >= (1u64 << 63) as f64 {
+        return Err(TimeError::OutOfRange);
+    }
+    Ok(Femtos(rounded as i64))
 }
 
 impl Add for Femtos {
@@ -198,6 +215,27 @@ mod tests {
         assert_eq!(
             Femtos::from_ps_f64_rounded(1e16),
             Err(TimeError::OutOfRange)
+        );
+    }
+
+    #[test]
+    fn from_fs_f64_rounded_half_away_from_zero() {
+        assert_eq!(Femtos::from_fs_f64_rounded(1.5).unwrap(), Femtos(2));
+        assert_eq!(Femtos::from_fs_f64_rounded(-1.5).unwrap(), Femtos(-2));
+        assert_eq!(Femtos::from_fs_f64_rounded(1.4).unwrap(), Femtos(1));
+        assert_eq!(Femtos::from_fs_f64_rounded(-0.5).unwrap(), Femtos(-1));
+        assert_eq!(Femtos::from_fs_f64_rounded(0.0).unwrap(), Femtos(0));
+    }
+
+    #[test]
+    fn from_fs_f64_rounded_rejects_non_finite() {
+        assert_eq!(
+            Femtos::from_fs_f64_rounded(f64::NAN),
+            Err(TimeError::NonFinite)
+        );
+        assert_eq!(
+            Femtos::from_fs_f64_rounded(f64::INFINITY),
+            Err(TimeError::NonFinite)
         );
     }
 

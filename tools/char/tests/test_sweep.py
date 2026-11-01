@@ -15,6 +15,7 @@ from sweep import (
     SETTLED_DT_PREV_FS,
     bias_delay_series,
     cache_key,
+    characterized_inputs,
     classify,
     collect,
     expand_axis,
@@ -34,6 +35,12 @@ ROOT = Path(__file__).resolve().parents[3]
 BENCHES = ROOT / "tools" / "char" / "benches"
 LIB = ROOT / "lib" / "families" / "rsfq"
 SWEEPS = ROOT / "tools" / "char" / "sweeps"
+
+
+def _tracked(stimulus: dict, q: int) -> dict:
+    pulses = {port: tuple(time + 1_000 for time in times) for port, times in stimulus.items()}
+    pulses["q"] = tuple(stimulus["clk"][0] + 5_000 + i * 10_000 for i in range(q))
+    return pulses
 
 
 def _cell(name: str) -> dict:
@@ -115,6 +122,28 @@ def test_dff_offset_shifts_clocks_after_dt_prev() -> None:
     assert early["clk"] == [150_000, 350_000, 550_000]
 
 
+def test_and_and_or_nominal_points_fire() -> None:
+    and_bench = yaml.safe_load((BENCHES / "AND.yaml").read_text(encoding="utf-8"))
+    params = {"dt_prev_fs": 200_000, "data_clock_offset_fs": 0}
+    and_stim = schedule_inputs(characterized_inputs(and_bench), params)
+    assert and_stim == {
+        "a": [100_000, 300_000],
+        "b": [100_000],
+        "clk": [150_000, 350_000, 550_000],
+    }
+    assert classify(_cell("AND"), and_stim, _tracked(and_stim, q=1)) == ("expected", "")
+
+    or_bench = yaml.safe_load((BENCHES / "OR.yaml").read_text(encoding="utf-8"))
+    or_stim = schedule_inputs(characterized_inputs(or_bench), params)
+    assert or_stim["a"] == [100_000]
+    assert or_stim["b"] == [100_000]
+    assert or_stim["clk"] == [150_000, 350_000, 550_000]
+    assert classify(_cell("OR"), or_stim, _tracked(or_stim, q=1)) == ("expected", "")
+
+    dff_bench = yaml.safe_load((BENCHES / "DFF.yaml").read_text(encoding="utf-8"))
+    assert characterized_inputs(dff_bench) == dff_bench["inputs"]
+
+
 def test_merger_offset_places_b_on_a() -> None:
     together = schedule_inputs(
         _inputs("MERGE"), {"dt_prev_fs": 200_000, "in_in_offset_fs": 0}
@@ -162,6 +191,14 @@ def test_classify_jtl_counts() -> None:
 
     assert classify(cell, stimulus, good) == ("expected", "")
     assert classify(cell, stimulus, short) == ("failed", "q: expected 2 got 1")
+
+
+def test_classify_merge_collision_counts_one_pulse() -> None:
+    cell = _cell("MERGE")
+    stimulus = {"a": [100_000, 300_000], "b": [100_000]}
+    pulses = {"a": (110_000, 310_000), "b": (105_000,), "q": (120_000, 320_000)}
+
+    assert classify(cell, stimulus, pulses) == ("expected", "")
 
 
 def test_classify_dff_clock_before_data_fires_nothing() -> None:

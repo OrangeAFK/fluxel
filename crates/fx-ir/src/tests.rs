@@ -8,7 +8,8 @@ use crate::cell::{
     CellDef, CellError, Constraint, ConstraintKind, Face, Fire, Ports, Provenance, Transition,
 };
 use crate::design::{Design, DesignError, Instance, Net, PinRef, Wire};
-use crate::schema::{cell_schema, design_schema, stimulus_schema};
+use crate::lut::{AxisQuery, LutBundle};
+use crate::schema::{cell_schema, design_schema, lut_schema, stimulus_schema};
 use crate::stimulus::Stimulus;
 
 fn parse_cell(value: &Value) -> Result<CellDef, CellError> {
@@ -734,7 +735,12 @@ fn rsfq_library_cells_parse() {
         assert_eq!(cell.name, name, "{file_name}");
         assert_eq!(cell.family, "rsfq");
         assert_eq!(cell.provenance, Provenance::Behavioral);
-        assert_eq!(cell.lut, None);
+        if name == "TFF" {
+            assert_eq!(cell.lut, None);
+        } else {
+            let expected = format!("lib/families/rsfq/{name}.lut.cbor");
+            assert_eq!(cell.lut.as_deref(), Some(expected.as_str()));
+        }
         assert!(cell.notes.is_some(), "{name} notes");
         assert_eq!(cell.netlist.as_deref(), expected_netlist(name), "{name}");
         assert_eq!(cell.ref_jj, expected_ref_jj(name), "{name}");
@@ -785,6 +791,53 @@ fn rsfq_library_cells_parse() {
     assert_eq!(found["TFF"].netlist, None);
 }
 
+#[test]
+fn rsfq_luts_cover_nominal() {
+    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let dir = root.join("lib/families/rsfq");
+    let entries = std::fs::read_dir(&dir).unwrap();
+    for entry in entries {
+        let path = entry.unwrap().path();
+        let Some(file_name) = path.file_name().and_then(|item| item.to_str()) else {
+            continue;
+        };
+        let Some(name) = file_name.strip_suffix(".cell.json") else {
+            continue;
+        };
+        let cell = CellDef::parse(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        if name == "TFF" {
+            assert_eq!(cell.lut, None);
+            continue;
+        }
+        let rel = cell.lut.as_deref().unwrap();
+        let bytes = std::fs::read(root.join(rel)).unwrap_or_else(|err| {
+            panic!("read {rel}: {err}");
+        });
+        let bundle = LutBundle::from_cbor(&bytes).unwrap_or_else(|err| {
+            panic!("decode {rel}: {err}");
+        });
+        assert_eq!(bundle.cell, name);
+        for (entry_name, lut_entry) in &bundle.entries {
+            let mut point = BTreeMap::new();
+            for axis in &lut_entry.axes {
+                point.insert(axis.name.clone(), nominal_axis(&axis.name));
+            }
+            let (_delay, valid) = bundle.lookup(entry_name, &point).unwrap();
+            assert!(valid, "{name} {entry_name}");
+        }
+    }
+}
+
+fn nominal_axis(axis: &str) -> AxisQuery {
+    if axis == "bias_frac" {
+        AxisQuery::Fraction(1.0)
+    } else if axis == "dt_prev_fs" {
+        AxisQuery::Time(Femtos(200_000))
+    } else {
+        AxisQuery::Time(Femtos(0))
+    }
+}
+
 fn expected_netlist(name: &str) -> Option<&'static str> {
     match name {
         "TFF" => None,
@@ -832,9 +885,196 @@ fn committed_schemas_match_generated() {
         ("cell.json", cell_schema().unwrap()),
         ("design.json", design_schema().unwrap()),
         ("stimulus.json", stimulus_schema().unwrap()),
+        ("lut.schema.json", lut_schema().unwrap()),
     ] {
         let text = std::fs::read_to_string(root.join(name)).unwrap();
         let committed: Value = serde_json::from_str(&text).unwrap();
         assert_eq!(committed, generated, "{name}");
+    }
+}
+
+fn sample_bundle() -> LutBundle {
+    let json = r#"{
+        "cell": "SAMPLE",
+        "entries": {
+            "t_a_q": {
+                "axes": [
+                    {"name": "bias_frac", "points": ["0.80", "1.00", "1.20"]},
+                    {"name": "dt_prev_fs", "points": ["6000", "200000"]}
+                ],
+                "values": [1000, 3000, 2000, 4000, 5000, 7000],
+                "interpolation": "multilinear",
+                "valid": {
+                    "bias_frac": {"lo": "0.80", "hi": "1.20"},
+                    "dt_prev_fs": {"lo": "6000", "hi": "200000"}
+                },
+                "sigma_fs": 0
+            }
+        },
+        "source": {
+            "josim_version": "josim-test",
+            "netlist_sha256": "abababababababababababababababababababababababababababababababab",
+            "sweep_sha256": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+            "timestep_fs": 25
+        }
+    }"#;
+    LutBundle::from_json(json).unwrap()
+}
+
+fn point(pairs: &[(&str, AxisQuery)]) -> BTreeMap<String, AxisQuery> {
+    pairs
+        .iter()
+        .map(|(name, query)| ((*name).to_string(), *query))
+        .collect()
+}
+
+#[test]
+fn lut_grid_node_is_exact() {
+    let bundle = sample_bundle();
+    let (fs, valid) = bundle
+        .lookup(
+            "t_a_q",
+            &point(&[
+                ("bias_frac", AxisQuery::Fraction(1.0)),
+                ("dt_prev_fs", AxisQuery::Time(Femtos(6_000))),
+            ]),
+        )
+        .unwrap();
+    assert_eq!(fs, Femtos(2_000));
+    assert!(valid);
+}
+
+#[test]
+fn lut_bilinear_midpoint_rounds_to_1_fs() {
+    let bundle = sample_bundle();
+    let (fs, valid) = bundle
+        .lookup(
+            "t_a_q",
+            &point(&[
+                ("bias_frac", AxisQuery::Fraction(0.90)),
+                ("dt_prev_fs", AxisQuery::Time(Femtos(103_000))),
+            ]),
+        )
+        .unwrap();
+    assert_eq!(fs, Femtos(2_500));
+    assert!(valid);
+    let mut text = BTreeMap::new();
+    text.insert("bias_frac".to_string(), "0.90".to_string());
+    text.insert("dt_prev_fs".to_string(), "103000".to_string());
+    assert_eq!(
+        bundle.lookup_text("t_a_q", &text).unwrap(),
+        (Femtos(2_500), true)
+    );
+}
+
+#[test]
+fn lut_outside_box_clamps() {
+    let bundle = sample_bundle();
+    let (clamped, valid) = bundle
+        .lookup(
+            "t_a_q",
+            &point(&[
+                ("bias_frac", AxisQuery::Fraction(0.50)),
+                ("dt_prev_fs", AxisQuery::Time(Femtos(6_000))),
+            ]),
+        )
+        .unwrap();
+    let (edge, edge_valid) = bundle
+        .lookup(
+            "t_a_q",
+            &point(&[
+                ("bias_frac", AxisQuery::Fraction(0.80)),
+                ("dt_prev_fs", AxisQuery::Time(Femtos(6_000))),
+            ]),
+        )
+        .unwrap();
+    assert!(!valid);
+    assert!(edge_valid);
+    assert_eq!(clamped, edge);
+    assert_eq!(clamped, Femtos(1_000));
+}
+
+#[test]
+fn lut_fixture_matches_python() {
+    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures");
+    let bytes = std::fs::read(root.join("sample.lut.cbor")).unwrap();
+    let bundle = LutBundle::from_cbor(&bytes).unwrap();
+    let text = std::fs::read_to_string(root.join("sample.lut.points.json")).unwrap();
+    let points: Vec<Value> = serde_json::from_str(&text).unwrap();
+    assert_eq!(points.len(), 100);
+    for row in points {
+        let mut query = BTreeMap::new();
+        let point = row["point"].as_object().unwrap();
+        for (name, value) in point {
+            query.insert(name.clone(), value.as_str().unwrap().to_string());
+        }
+        let (fs, valid) = bundle
+            .lookup_text(row["entry"].as_str().unwrap(), &query)
+            .unwrap();
+        assert_eq!(fs.0, row["fs"].as_i64().unwrap());
+        assert_eq!(valid, row["in_valid"].as_bool().unwrap());
+    }
+}
+
+proptest! {
+    #[test]
+    fn prop_lut_node_exact_and_clamp_idempotent(
+        values in prop::collection::vec(-5_000i64..5_000, 4),
+        nudge in -20_000i64..20_000
+    ) {
+        let bundle = LutBundle::from_json(&format!(
+            r#"{{
+                "cell": "P",
+                "entries": {{
+                    "t_a_q": {{
+                        "axes": [
+                            {{"name": "bias_frac", "points": ["0.80", "1.20"]}},
+                            {{"name": "dt_prev_fs", "points": ["1000", "3000"]}}
+                        ],
+                        "values": [{}, {}, {}, {}],
+                        "interpolation": "multilinear",
+                        "valid": {{
+                            "bias_frac": {{"lo": "0.80", "hi": "1.20"}},
+                            "dt_prev_fs": {{"lo": "1000", "hi": "3000"}}
+                        }},
+                        "sigma_fs": 0
+                    }}
+                }},
+                "source": {{
+                    "josim_version": "proptest",
+                    "netlist_sha256": "aa",
+                    "sweep_sha256": "bb",
+                    "timestep_fs": 25
+                }}
+            }}"#,
+            values[0], values[1], values[2], values[3]
+        ))
+        .unwrap();
+        let node = point(&[
+            ("bias_frac", AxisQuery::Fraction(0.80)),
+            ("dt_prev_fs", AxisQuery::Time(Femtos(1_000))),
+        ]);
+        let (fs, valid) = bundle.lookup("t_a_q", &node).unwrap();
+        assert_eq!(fs, Femtos(values[0]));
+        assert!(valid);
+        let again = bundle.lookup("t_a_q", &node).unwrap();
+        assert_eq!((fs, valid), again);
+
+        let outside = point(&[
+            ("bias_frac", AxisQuery::Fraction(0.80)),
+            ("dt_prev_fs", AxisQuery::Time(Femtos(nudge))),
+        ]);
+        let (got, got_valid) = bundle.lookup("t_a_q", &outside).unwrap();
+        let clamped_dt = nudge.clamp(1_000, 3_000);
+        let clamped = point(&[
+            ("bias_frac", AxisQuery::Fraction(0.80)),
+            ("dt_prev_fs", AxisQuery::Time(Femtos(clamped_dt))),
+        ]);
+        let (edge, edge_valid) = bundle.lookup("t_a_q", &clamped).unwrap();
+        assert_eq!(got, edge);
+        assert!(edge_valid);
+        assert_eq!(got_valid, (1_000..=3_000).contains(&nudge));
+        let twice = bundle.lookup("t_a_q", &outside).unwrap();
+        assert_eq!((got, got_valid), twice);
     }
 }

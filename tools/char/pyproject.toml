@@ -7,7 +7,7 @@ name = "fluxel-char"
 version = "0.0.0"
 description = "JoSIM characterization harness for Fluxel."
 requires-python = ">=3.11"
-dependencies = ["pyyaml", "pyarrow", "matplotlib"]
+dependencies = ["pyyaml", "pyarrow", "matplotlib", "cbor2", "jsonschema"]
 
 [tool.setuptools.packages.find]
 where = ["."]

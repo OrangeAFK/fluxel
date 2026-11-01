@@ -1,0 +1,140 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "definitions": {
+    "Interpolation": {
+      "description": "The only interpolation this bundle stores.",
+      "enum": [
+        "multilinear"
+      ],
+      "type": "string"
+    },
+    "LutAxis": {
+      "additionalProperties": false,
+      "description": "One interpolation axis. Points are decimal strings, strictly increasing.",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "points": {
+          "description": "Decimal text. `bias_frac` is a fraction. `*_fs` axes are integer femtoseconds.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "points"
+      ],
+      "type": "object"
+    },
+    "LutEntry": {
+      "additionalProperties": false,
+      "description": "One delay or window table.\n\n`values` are femtoseconds, row-major, last axis fastest. `sigma_fs` is the Monte Carlo sigma. It is 0 until that sweep exists.",
+      "properties": {
+        "axes": {
+          "items": {
+            "$ref": "#/definitions/LutAxis"
+          },
+          "type": "array"
+        },
+        "interpolation": {
+          "$ref": "#/definitions/Interpolation"
+        },
+        "sigma_fs": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "valid": {
+          "additionalProperties": {
+            "$ref": "#/definitions/ValidBound"
+          },
+          "type": "object"
+        },
+        "values": {
+          "items": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "axes",
+        "interpolation",
+        "sigma_fs",
+        "valid",
+        "values"
+      ],
+      "type": "object"
+    },
+    "LutSource": {
+      "additionalProperties": false,
+      "description": "Where the grid was measured.",
+      "properties": {
+        "josim_version": {
+          "type": "string"
+        },
+        "netlist_sha256": {
+          "type": "string"
+        },
+        "sweep_sha256": {
+          "type": "string"
+        },
+        "timestep_fs": {
+          "description": "Integration step in femtoseconds.",
+          "format": "int64",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "josim_version",
+        "netlist_sha256",
+        "sweep_sha256",
+        "timestep_fs"
+      ],
+      "type": "object"
+    },
+    "ValidBound": {
+      "additionalProperties": false,
+      "description": "Inclusive valid bound. `lo` and `hi` use the same decimal text as axis points.",
+      "properties": {
+        "hi": {
+          "type": "string"
+        },
+        "lo": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "hi",
+        "lo"
+      ],
+      "type": "object"
+    }
+  },
+  "description": "One cell's timing tables.",
+  "properties": {
+    "cell": {
+      "type": "string"
+    },
+    "entries": {
+      "additionalProperties": {
+        "$ref": "#/definitions/LutEntry"
+      },
+      "type": "object"
+    },
+    "source": {
+      "$ref": "#/definitions/LutSource"
+    }
+  },
+  "required": [
+    "cell",
+    "entries",
+    "source"
+  ],
+  "title": "LutBundle",
+  "type": "object"
+}

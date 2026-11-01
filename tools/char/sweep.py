@@ -96,6 +96,27 @@ def grid_points(sweep: Mapping[str, Any]) -> list[dict[str, Any]]:
     return [dict(zip(names, combo, strict=True)) for combo in itertools.product(*columns)]
 
 
+def characterized_inputs(bench: Mapping[str, Any]) -> dict[str, list[Any]]:
+    """Pulse lists the sweep and the held-out transients both schedule.
+
+    AND and OR keep the bench's pulse counts, but every data port shares one
+    setup edge and the clock follows by ``lead_fs``. Offset 0 then fires at
+    every ``dt_prev``. Other cells keep the bench list, which already does.
+    """
+    inputs = {str(port): list(times) for port, times in bench["inputs"].items()}
+    if str(bench["cell"]) not in {"AND", "OR"}:
+        return inputs
+    lead_fs = int(bench["lead_fs"])
+    if lead_fs % 1_000 != 0:
+        raise SweepError(f"{bench['cell']} lead_fs is not a whole number of picoseconds")
+    origin = 100
+    clock = origin + lead_fs // 1_000
+    for port, times in inputs.items():
+        anchor = clock if port == "clk" else origin
+        inputs[port] = [anchor] * len(times)
+    return inputs
+
+
 def schedule_inputs(inputs: Mapping[str, Sequence[Any]], params: Mapping[str, Any]) -> dict[str, list[int]]:
     """Place bench pulses, in femtoseconds.
 
@@ -411,7 +432,7 @@ def run_cell(
     nominal = render(BENCHES / f"{cell}.yaml")
     jobs = []
     for params in grid_points(sweep):
-        stimulus = schedule_inputs(bench["inputs"], params)
+        stimulus = schedule_inputs(characterized_inputs(bench), params)
         jobs.append(
             {
                 "params": params,
@@ -590,6 +611,11 @@ def _predict(cell: Mapping[str, Any], stimulus: Mapping[str, Sequence[int]]) -> 
         state = trans["to"]
         for fire in trans.get("fire") or []:
             fires[fire["port"]] += 1
+    if cell["name"] == "MERGE":
+        # Coincident inputs are one physical pulse. SPEC §4.1 counts that once.
+        shared = set(stimulus.get("a", ())) & set(stimulus.get("b", ()))
+        port = cell["ports"]["out"][0]
+        fires[port] = max(0, fires[port] - len(shared))
     return fires
 
 

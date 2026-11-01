@@ -3,6 +3,7 @@ use serde_json::Value;
 
 use crate::cell::CellDef;
 use crate::design::Design;
+use crate::lut::LutBundle;
 use crate::stimulus::Stimulus;
 
 /// JSON Schema for a cell definition.
@@ -18,4 +19,9 @@ pub fn design_schema() -> Result<Value, serde_json::Error> {
 /// JSON Schema for a stimulus map.
 pub fn stimulus_schema() -> Result<Value, serde_json::Error> {
     serde_json::to_value(schema_for!(Stimulus))
+}
+
+/// JSON Schema for a LUT bundle.
+pub fn lut_schema() -> Result<Value, serde_json::Error> {
+    serde_json::to_value(schema_for!(LutBundle))
 }

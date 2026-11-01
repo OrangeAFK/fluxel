@@ -1,0 +1,39 @@
+cell	entry	kind	samples	max_err_fs	mean_err_fs	max_pct_nominal	mean_pct_nominal	pass_rate	note
+AND	t_clk_q	delay	50	549	49.780	14.621	1.326		
+AND	t_setup_a	window	18	37085	7774.500	6099.507	1278.701	42/50	window error resolution 10 fs
+AND	t_setup_b	window	16	33795	4898.688	5549.261	804.382	44/50	window error resolution 10 fs
+AND	t_hold_a	window	11	2088	192.091	363.763	33.465	49/50	window error resolution 10 fs
+AND	t_hold_b	window	16	3843	508.688	668.348	88.467	44/50	window error resolution 10 fs
+DCSFQ	t_a_q	delay	50	200	13.640	7.315	0.499		
+DCSFQ	dt_min	window	21	1573	247.048	22.000	3.455	37/50	window error resolution 10 fs; 2 unbracketed
+DFF	t_clk_q	delay	50	415	14.480	9.923	0.346		
+DFF	t_setup	window	10	17	4.300	15.179	3.839	50/50	window error resolution 10 fs
+DFF	t_hold	window	10	38	10.100	0.915	0.243	50/50	window error resolution 10 fs
+JTL	t_a_q	delay	50	58	2.180	3.197	0.120		
+JTL	dt_min	window	27	1209	279.185	16.909	3.905	23/50	window error resolution 10 fs; 10 unbracketed
+MERGE	t_a_q	delay	50	264	11.440	4.454	0.193		
+MERGE	t_b_q	delay	50	13	3.640	0.322	0.090		
+MERGE	t_merge_ab	window	17	443	117.647	7.383	1.961	43/50	window error resolution 10 fs
+MERGE	t_merge_ba	window	14	375	75.000	6.257	1.251	46/50	window error resolution 10 fs
+MERGE	dt_min	window	22	1302	273.636	18.159	3.816	32/50	window error resolution 10 fs; 6 unbracketed
+NDRO	t_clk_q	delay	50	10	4.520	0.248	0.112		
+NDRO	t_setup_a	window	14	129	48.929	61.722	23.411	46/50	window error resolution 10 fs
+NDRO	t_hold_a	window	10	76	12.000	1.904	0.301	50/50	window error resolution 10 fs
+NDRO	t_hold_b	window	17	109	47.118	2.708	1.171	43/50	window error resolution 10 fs
+NDRO	dt_min	window	24	1532	430.958	21.427	6.027	30/50	window error resolution 10 fs; 6 unbracketed
+NOT	t_clk_q	delay	50	71	17.440	1.553	0.381		
+NOT	t_setup	window	16	658	133.375	66.870	13.554	44/50	window error resolution 10 fs
+NOT	t_hold	window	10	48	16.400	1.061	0.363	50/50	window error resolution 10 fs
+NOT	dt_min	window	18	2789	296.500	39.007	4.147	40/50	window error resolution 10 fs; 2 unbracketed
+OR	t_clk_q	delay	50	325	18.780	8.853	0.512		
+OR	t_setup_a	window	10	12	5.200	0.386	0.167	50/50	window error resolution 10 fs
+OR	t_setup_b	window	10	60	16.800	1.932	0.541	50/50	window error resolution 10 fs
+SFQDC	t_a_q_off	delay	50	8165	2294.880	383.694	107.842		
+SFQDC	t_a_q_on	delay	50	168	52.060	0.708	0.220		
+SFQDC	dt_min	window	41	142013	70112.049	69.556	34.340	7/50	window error resolution 10 fs; 9 unbracketed
+SPLIT	t_a_q0	delay	50	100	26.140	2.581	0.675		
+SPLIT	t_a_q1	delay	50	89	25.100	2.222	0.627		
+SPLIT	dt_min	window	18	1262	203.167	17.650	2.841	25/50	window error resolution 10 fs; 17 unbracketed
+XOR	t_clk_q	delay	50	177	13.560	4.649	0.356		
+XOR	t_setup_a	window	15	145	42.400	216.418	63.284	45/50	window error resolution 10 fs
+XOR	t_setup_b	window	19	141	66.895	343.902	163.158	41/50	window error resolution 10 fs

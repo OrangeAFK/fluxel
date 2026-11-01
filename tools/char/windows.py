@@ -510,7 +510,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         )
 
 
-def _probe(
+def _probe_request(
     nominal: str,
     bias: Any,
     window: Mapping[str, Any],
@@ -518,9 +518,8 @@ def _probe(
     lead: int,
     offset: int,
     josim_version: str,
-    cache: dict[str, dict[str, Any]],
-    fresh: list[dict[str, Any]],
-) -> tuple[str, str, dict[str, Any]]:
+) -> tuple[str, dict[str, Any], str]:
+    """Deck, cache params, and cache key for one window offset."""
     stimulus = schedule(window["stimulus"], anchor=anchor, lead=lead, offset=offset)
     deck = patch_deck(nominal, bias, stimulus, stop_fs(stimulus))
     params: dict[str, Any] = {
@@ -533,7 +532,23 @@ def _probe(
         params["arrive"] = list(window["arrive"])
     if window.get("measure"):
         params["measure"] = dict(window["measure"])
-    key = cache_key(deck, params, josim_version)
+    return deck, params, cache_key(deck, params, josim_version)
+
+
+def _probe(
+    nominal: str,
+    bias: Any,
+    window: Mapping[str, Any],
+    anchor: int,
+    lead: int,
+    offset: int,
+    josim_version: str,
+    cache: dict[str, dict[str, Any]],
+    fresh: list[dict[str, Any]],
+) -> tuple[str, str, dict[str, Any]]:
+    deck, _params, key = _probe_request(
+        nominal, bias, window, anchor, lead, offset, josim_version
+    )
     hit = cache.get(key)
     if hit is None:
         hit = _simulate(deck, window)

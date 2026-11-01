@@ -399,6 +399,8 @@ dependencies = [
 name = "fx-ir"
 version = "0.0.0"
 dependencies = [
+ "ciborium",
+ "criterion",
  "fx-time",
  "proptest",
  "schemars",

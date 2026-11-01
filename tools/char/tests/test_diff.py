@@ -21,6 +21,14 @@ def test_concrete_errors() -> None:
     assert got.max_pct == 100
     assert got.histogram_fs == ((0, 1), (1000, 1))
     assert got.histogram_pct == ((0.0, 1), (100.0, 1))
+    assert got.pairs == (("q", 0, 1000), ("q", 5000, 5000))
+
+
+def test_pairs_skip_the_unmatched_pulse() -> None:
+    got = diff({"q": [1, 2]}, {"q": [2]}, nominal_fs=10)
+
+    assert got.missing == (("q", 1),)
+    assert got.pairs == (("q", 2, 2),)
 
 
 @given(LOG, NOMINAL)

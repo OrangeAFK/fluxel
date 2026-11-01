@@ -18,7 +18,7 @@ const SNAPSHOT_EVERY: u64 = 1024;
 #[derive(Debug, Error)]
 pub enum CliError {
     #[error(
-        "usage: fx-cli sim --design <file> --stimulus <file> --lib <dir> [--until <fs>] [--out <file>] [--log <file>] [--violations]\n       fx-cli hash --log <file>\n       fx-cli export-josim --design <file> --stimulus <file> --lib <dir> --out <file> [--bias <mul>] [--step <fs>] [--stop <fs>] [--current-in] [--resistor-out]"
+        "usage: fx-cli sim --design <file> --stimulus <file> --lib <dir> [--until <fs>] [--out <file>] [--log <file>] [--violations] [--bias <frac>]\n       fx-cli hash --log <file>\n       fx-cli export-josim --design <file> --stimulus <file> --lib <dir> --out <file> [--bias <mul>] [--step <fs>] [--stop <fs>] [--current-in] [--resistor-out]"
     )]
     Usage,
     #[error("cannot read {path}: {source}")]
@@ -205,14 +205,18 @@ pub fn load_luts(dir: &Path) -> Result<BTreeMap<String, LutBundle>, CliError> {
 }
 
 /// Run `design_json` with `stimulus_json` until `until`, or to completion.
+///
+/// `bias`, when set, is applied to every bias domain before the first step.
 pub fn simulate(
     design_json: &str,
     stimulus_json: &str,
     cells: BTreeMap<String, CellDef>,
     luts: BTreeMap<String, LutBundle>,
     until: Option<i64>,
+    bias: Option<f64>,
 ) -> Result<SimReport, CliError> {
     let design = Design::parse(design_json)?;
+    let domains: Vec<String> = design.bias_domains.iter().cloned().collect();
     let stimulus = Stimulus::parse(stimulus_json)?;
     let mut sim = Simulator::new(
         design,
@@ -222,6 +226,11 @@ pub fn simulate(
         ViolationPolicy::Record,
         SNAPSHOT_EVERY,
     )?;
+    if let Some(frac) = bias {
+        for domain in &domains {
+            sim.set_bias(domain, frac)?;
+        }
+    }
     match until {
         Some(t) => sim.run_until(Femtos(t))?,
         None => sim.run()?,

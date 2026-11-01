@@ -1,0 +1,414 @@
+{
+  "bias_domains": [
+    "b"
+  ],
+  "clock_domains": {
+    "clk": [
+      "dff0",
+      "dff1",
+      "dff2",
+      "dff3",
+      "dff4",
+      "dff5",
+      "dff6",
+      "dff7"
+    ]
+  },
+  "instances": {
+    "c0": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "c1": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "c2": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "c3": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "c4": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "c5": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "c6": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "dff0": {
+      "bias_domain": "b",
+      "cell": "DFF",
+      "family": "rsfq"
+    },
+    "dff1": {
+      "bias_domain": "b",
+      "cell": "DFF",
+      "family": "rsfq"
+    },
+    "dff2": {
+      "bias_domain": "b",
+      "cell": "DFF",
+      "family": "rsfq"
+    },
+    "dff3": {
+      "bias_domain": "b",
+      "cell": "DFF",
+      "family": "rsfq"
+    },
+    "dff4": {
+      "bias_domain": "b",
+      "cell": "DFF",
+      "family": "rsfq"
+    },
+    "dff5": {
+      "bias_domain": "b",
+      "cell": "DFF",
+      "family": "rsfq"
+    },
+    "dff6": {
+      "bias_domain": "b",
+      "cell": "DFF",
+      "family": "rsfq"
+    },
+    "dff7": {
+      "bias_domain": "b",
+      "cell": "DFF",
+      "family": "rsfq"
+    }
+  },
+  "nets": [
+    {
+      "driver": {
+        "port": "d"
+      },
+      "sink": {
+        "instance": "dff0",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "port": "clk"
+      },
+      "sink": {
+        "instance": "c0",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "c0",
+        "port": "q0"
+      },
+      "sink": {
+        "instance": "c1",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "c0",
+        "port": "q1"
+      },
+      "sink": {
+        "instance": "c2",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "c1",
+        "port": "q0"
+      },
+      "sink": {
+        "instance": "c3",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "c1",
+        "port": "q1"
+      },
+      "sink": {
+        "instance": "c4",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "c2",
+        "port": "q0"
+      },
+      "sink": {
+        "instance": "c5",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "c2",
+        "port": "q1"
+      },
+      "sink": {
+        "instance": "c6",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "c3",
+        "port": "q0"
+      },
+      "sink": {
+        "instance": "dff0",
+        "port": "clk"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "c3",
+        "port": "q1"
+      },
+      "sink": {
+        "instance": "dff1",
+        "port": "clk"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "c4",
+        "port": "q0"
+      },
+      "sink": {
+        "instance": "dff2",
+        "port": "clk"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "c4",
+        "port": "q1"
+      },
+      "sink": {
+        "instance": "dff3",
+        "port": "clk"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "c5",
+        "port": "q0"
+      },
+      "sink": {
+        "instance": "dff4",
+        "port": "clk"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "c5",
+        "port": "q1"
+      },
+      "sink": {
+        "instance": "dff5",
+        "port": "clk"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "c6",
+        "port": "q0"
+      },
+      "sink": {
+        "instance": "dff6",
+        "port": "clk"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "c6",
+        "port": "q1"
+      },
+      "sink": {
+        "instance": "dff7",
+        "port": "clk"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "dff0",
+        "port": "q"
+      },
+      "sink": {
+        "instance": "dff1",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "dff1",
+        "port": "q"
+      },
+      "sink": {
+        "instance": "dff2",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "dff2",
+        "port": "q"
+      },
+      "sink": {
+        "instance": "dff3",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "dff3",
+        "port": "q"
+      },
+      "sink": {
+        "instance": "dff4",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "dff4",
+        "port": "q"
+      },
+      "sink": {
+        "instance": "dff5",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "dff5",
+        "port": "q"
+      },
+      "sink": {
+        "instance": "dff6",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "dff6",
+        "port": "q"
+      },
+      "sink": {
+        "instance": "dff7",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "dff7",
+        "port": "q"
+      },
+      "sink": {
+        "port": "q"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    }
+  ],
+  "ports": {
+    "in": [
+      "d",
+      "clk"
+    ],
+    "out": [
+      "q"
+    ]
+  }
+}

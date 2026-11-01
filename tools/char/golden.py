@@ -67,8 +67,12 @@ def generate_entry(
     stimulus: Path,
     *,
     root: Path | None = None,
+    timeout: float | None = None,
 ) -> None:
-    """Simulate ``netlist`` and write ``golden/<name>`` under ``root``."""
+    """Simulate ``netlist`` and write ``golden/<name>`` under ``root``.
+
+    ``timeout`` is the JoSIM limit in seconds. The default stays ``TIMEOUT_S``.
+    """
     if os.environ.get("FLUXEL_GOLDEN_UPDATE") != "1":
         raise GoldenUpdateError(
             "set FLUXEL_GOLDEN_UPDATE=1 to write golden entries"
@@ -83,7 +87,8 @@ def generate_entry(
     stimulus_text = stimulus.read_text(encoding="utf-8")
     ports = _ports(stimulus_text)
     columns = tuple(ports.values())
-    traces = run_josim(netlist, timeout=TIMEOUT_S, columns=columns)
+    limit = TIMEOUT_S if timeout is None else timeout
+    traces = run_josim(netlist, timeout=limit, columns=columns)
     pulses: dict[str, list[int]] = {}
     for port, column in ports.items():
         time, phase = traces[column]

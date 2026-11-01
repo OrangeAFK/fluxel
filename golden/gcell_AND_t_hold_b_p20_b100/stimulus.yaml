@@ -1,0 +1,6 @@
+ports:
+  dut.q: P(B15|XDUT)
+  load_q.q: P(B2|XLOAD_Q)
+  src_a.q: P(B2|XSRC_A)
+  src_b.q: P(B2|XSRC_B)
+  src_clk.q: P(B2|XSRC_CLK)

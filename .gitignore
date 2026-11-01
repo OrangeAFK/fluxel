@@ -26,3 +26,6 @@ scratch/**/chain_1p2.cir
 
 # Sweep caches, parquet, and plots
 tools/char/out/
+
+# Generated M2 comparison page. CI uploads it as an artifact.
+/reports/

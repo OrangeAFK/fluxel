@@ -1,0 +1,145 @@
+{
+  "bias_domains": [
+    "b"
+  ],
+  "clock_domains": {},
+  "instances": {
+    "dut": {
+      "bias_domain": "b",
+      "cell": "XOR",
+      "family": "rsfq"
+    },
+    "load_q": {
+      "bias_domain": "b",
+      "cell": "JTL",
+      "family": "rsfq"
+    },
+    "src_a": {
+      "bias_domain": "b",
+      "cell": "JTL",
+      "family": "rsfq"
+    },
+    "src_b": {
+      "bias_domain": "b",
+      "cell": "JTL",
+      "family": "rsfq"
+    },
+    "src_clk": {
+      "bias_domain": "b",
+      "cell": "JTL",
+      "family": "rsfq"
+    }
+  },
+  "nets": [
+    {
+      "driver": {
+        "port": "a"
+      },
+      "sink": {
+        "instance": "src_a",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "src_a",
+        "port": "q"
+      },
+      "sink": {
+        "instance": "dut",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "port": "b"
+      },
+      "sink": {
+        "instance": "src_b",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "src_b",
+        "port": "q"
+      },
+      "sink": {
+        "instance": "dut",
+        "port": "b"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "port": "clk"
+      },
+      "sink": {
+        "instance": "src_clk",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "src_clk",
+        "port": "q"
+      },
+      "sink": {
+        "instance": "dut",
+        "port": "clk"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "dut",
+        "port": "q"
+      },
+      "sink": {
+        "instance": "load_q",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "load_q",
+        "port": "q"
+      },
+      "sink": {
+        "port": "q"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    }
+  ],
+  "ports": {
+    "in": [
+      "a",
+      "b",
+      "clk"
+    ],
+    "out": [
+      "q"
+    ]
+  }
+}

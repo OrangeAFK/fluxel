@@ -1,0 +1,114 @@
+{
+  "bias_domains": [
+    "b"
+  ],
+  "clock_domains": {},
+  "instances": {
+    "dut": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "load_q0": {
+      "bias_domain": "b",
+      "cell": "JTL",
+      "family": "rsfq"
+    },
+    "load_q1": {
+      "bias_domain": "b",
+      "cell": "JTL",
+      "family": "rsfq"
+    },
+    "src_a": {
+      "bias_domain": "b",
+      "cell": "JTL",
+      "family": "rsfq"
+    }
+  },
+  "nets": [
+    {
+      "driver": {
+        "port": "a"
+      },
+      "sink": {
+        "instance": "src_a",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "src_a",
+        "port": "q"
+      },
+      "sink": {
+        "instance": "dut",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "dut",
+        "port": "q0"
+      },
+      "sink": {
+        "instance": "load_q0",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "load_q0",
+        "port": "q"
+      },
+      "sink": {
+        "port": "q0"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "dut",
+        "port": "q1"
+      },
+      "sink": {
+        "instance": "load_q1",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "load_q1",
+        "port": "q"
+      },
+      "sink": {
+        "port": "q1"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    }
+  ],
+  "ports": {
+    "in": [
+      "a"
+    ],
+    "out": [
+      "q0",
+      "q1"
+    ]
+  }
+}

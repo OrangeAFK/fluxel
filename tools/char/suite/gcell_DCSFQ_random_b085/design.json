@@ -1,0 +1,65 @@
+{
+  "bias_domains": [
+    "b"
+  ],
+  "clock_domains": {},
+  "instances": {
+    "dut": {
+      "bias_domain": "b",
+      "cell": "DCSFQ",
+      "family": "rsfq"
+    },
+    "load_q": {
+      "bias_domain": "b",
+      "cell": "JTL",
+      "family": "rsfq"
+    }
+  },
+  "nets": [
+    {
+      "driver": {
+        "port": "a"
+      },
+      "sink": {
+        "instance": "dut",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "dut",
+        "port": "q"
+      },
+      "sink": {
+        "instance": "load_q",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "load_q",
+        "port": "q"
+      },
+      "sink": {
+        "port": "q"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    }
+  ],
+  "ports": {
+    "in": [
+      "a"
+    ],
+    "out": [
+      "q"
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "josim_version": "JoSIM: Josephson Junction Superconductive SPICE Circuit Simulator\nCopyright (C) 2020 by Johannes Delport (jdelport@sun.ac.za)\nv2.7.02a34ee compiled on Oct 29 2026 at 06:58:17",
+  "sha256": {
+    "netlist.cir": "b36d37061a102c0622466d633ac3a896321a1303af90cea2d8b56c106f4a2c87",
+    "pulses.json": "f7efe60531f97e802343e1403e3396d849b9cdb5bd02c4e574bbb2af19316be4",
+    "stimulus.yaml": "625d215da3859c7910b50a189344e8c4b2625cc86401ced00fa26be8b0a708c0"
+  },
+  "timestep_fs": 25
+}

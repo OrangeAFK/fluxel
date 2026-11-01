@@ -1,0 +1,3 @@
+ports:
+  dut.q: P(B8|XDUT)
+  src_a.q: P(B2|XSRC_A)

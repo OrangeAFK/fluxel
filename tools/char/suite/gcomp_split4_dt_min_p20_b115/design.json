@@ -1,0 +1,494 @@
+{
+  "bias_domains": [
+    "b"
+  ],
+  "clock_domains": {},
+  "instances": {
+    "s0": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "s1": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "s10": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "s11": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "s12": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "s13": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "s14": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "s2": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "s3": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "s4": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "s5": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "s6": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "s7": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "s8": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    },
+    "s9": {
+      "bias_domain": "b",
+      "cell": "SPLIT",
+      "family": "rsfq"
+    }
+  },
+  "nets": [
+    {
+      "driver": {
+        "port": "in"
+      },
+      "sink": {
+        "instance": "s0",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s0",
+        "port": "q0"
+      },
+      "sink": {
+        "instance": "s1",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s0",
+        "port": "q1"
+      },
+      "sink": {
+        "instance": "s2",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s1",
+        "port": "q0"
+      },
+      "sink": {
+        "instance": "s3",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s1",
+        "port": "q1"
+      },
+      "sink": {
+        "instance": "s4",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s2",
+        "port": "q0"
+      },
+      "sink": {
+        "instance": "s5",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s2",
+        "port": "q1"
+      },
+      "sink": {
+        "instance": "s6",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s3",
+        "port": "q0"
+      },
+      "sink": {
+        "instance": "s7",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s3",
+        "port": "q1"
+      },
+      "sink": {
+        "instance": "s8",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s4",
+        "port": "q0"
+      },
+      "sink": {
+        "instance": "s9",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s4",
+        "port": "q1"
+      },
+      "sink": {
+        "instance": "s10",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s5",
+        "port": "q0"
+      },
+      "sink": {
+        "instance": "s11",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s5",
+        "port": "q1"
+      },
+      "sink": {
+        "instance": "s12",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s6",
+        "port": "q0"
+      },
+      "sink": {
+        "instance": "s13",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s6",
+        "port": "q1"
+      },
+      "sink": {
+        "instance": "s14",
+        "port": "a"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s7",
+        "port": "q0"
+      },
+      "sink": {
+        "port": "out0"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s7",
+        "port": "q1"
+      },
+      "sink": {
+        "port": "out1"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s8",
+        "port": "q0"
+      },
+      "sink": {
+        "port": "out2"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s8",
+        "port": "q1"
+      },
+      "sink": {
+        "port": "out3"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s9",
+        "port": "q0"
+      },
+      "sink": {
+        "port": "out4"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s9",
+        "port": "q1"
+      },
+      "sink": {
+        "port": "out5"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s10",
+        "port": "q0"
+      },
+      "sink": {
+        "port": "out6"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s10",
+        "port": "q1"
+      },
+      "sink": {
+        "port": "out7"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s11",
+        "port": "q0"
+      },
+      "sink": {
+        "port": "out8"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s11",
+        "port": "q1"
+      },
+      "sink": {
+        "port": "out9"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s12",
+        "port": "q0"
+      },
+      "sink": {
+        "port": "out10"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s12",
+        "port": "q1"
+      },
+      "sink": {
+        "port": "out11"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s13",
+        "port": "q0"
+      },
+      "sink": {
+        "port": "out12"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s13",
+        "port": "q1"
+      },
+      "sink": {
+        "port": "out13"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s14",
+        "port": "q0"
+      },
+      "sink": {
+        "port": "out14"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    },
+    {
+      "driver": {
+        "instance": "s14",
+        "port": "q1"
+      },
+      "sink": {
+        "port": "out15"
+      },
+      "wire": {
+        "kind": "direct"
+      }
+    }
+  ],
+  "ports": {
+    "in": [
+      "in"
+    ],
+    "out": [
+      "out0",
+      "out1",
+      "out2",
+      "out3",
+      "out4",
+      "out5",
+      "out6",
+      "out7",
+      "out8",
+      "out9",
+      "out10",
+      "out11",
+      "out12",
+      "out13",
+      "out14",
+      "out15"
+    ]
+  }
+}

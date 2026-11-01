@@ -38,6 +38,7 @@ struct SimArgs {
     out: Option<PathBuf>,
     log: Option<PathBuf>,
     violations: bool,
+    bias: Option<f64>,
 }
 
 fn run_sim(args: &[String]) -> Result<u8, CliError> {
@@ -46,7 +47,7 @@ fn run_sim(args: &[String]) -> Result<u8, CliError> {
     let luts = load_luts(&parsed.lib)?;
     let design = read_text(&parsed.design)?;
     let stimulus = read_text(&parsed.stimulus)?;
-    let report = simulate(&design, &stimulus, cells, luts, parsed.until)?;
+    let report = simulate(&design, &stimulus, cells, luts, parsed.until, parsed.bias)?;
     if let Some(path) = &parsed.out {
         write_bytes(path, report.pulses.as_bytes())?;
     }
@@ -65,6 +66,7 @@ fn parse_sim(args: &[String]) -> Result<SimArgs, CliError> {
     let mut out = None;
     let mut log = None;
     let mut violations = false;
+    let mut bias = None;
     let mut rest = args.iter();
     while let Some(flag) = rest.next() {
         match flag.as_str() {
@@ -86,6 +88,15 @@ fn parse_sim(args: &[String]) -> Result<SimArgs, CliError> {
                 }
                 violations = true;
             }
+            "--bias" => {
+                if bias.is_some() {
+                    return Err(CliError::Usage);
+                }
+                let value = next_value(&mut rest)?;
+                bias = Some(value.parse().map_err(|_| CliError::BadBias {
+                    value: value.to_string(),
+                })?);
+            }
             _ => return Err(CliError::Usage),
         }
     }
@@ -97,6 +108,7 @@ fn parse_sim(args: &[String]) -> Result<SimArgs, CliError> {
         out,
         log,
         violations,
+        bias,
     })
 }
 

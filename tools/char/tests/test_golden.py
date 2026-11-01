@@ -62,9 +62,12 @@ def test_generate_entry_writes_pulses_and_manifest(
         newline="\n",
     )
 
+    seen: dict[str, float] = {}
+
     def fake_run(path: Path, *, timeout: float, columns: tuple[str, ...]) -> dict:
         assert path == netlist
         assert timeout > 0
+        seen["timeout"] = timeout
         assert columns == ("P(B1|XMID)", "P(B2|XMID)")
         time = (0.0, 1e-12)
         phase = (0.0, 2 * math.pi)
@@ -74,6 +77,8 @@ def test_generate_entry_writes_pulses_and_manifest(
     monkeypatch.setattr("golden.josim_version", lambda: "vtest")
 
     generate_entry("demo", netlist, stimulus, root=tmp_path)
+
+    assert seen["timeout"] == 60
 
     entry = tmp_path / "golden" / "demo"
     pulses = load((entry / "pulses.json").read_text(encoding="utf-8"))
@@ -85,6 +90,31 @@ def test_generate_entry_writes_pulses_and_manifest(
     for name, digest in meta["sha256"].items():
         assert __import__("hashlib").sha256((entry / name).read_bytes()).hexdigest() == digest
     assert check_manifest(tmp_path / "golden") == []
+
+
+def test_generate_entry_forwards_timeout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("FLUXEL_GOLDEN_UPDATE", "1")
+    netlist = tmp_path / "chain.cir"
+    stimulus = tmp_path / "stimulus.yaml"
+    netlist.write_text(".tran 0.025p 1p\n.end\n", encoding="utf-8", newline="\n")
+    stimulus.write_text("ports:\n  a: P(B1|XMID)\n", encoding="utf-8", newline="\n")
+    seen: dict[str, float] = {}
+
+    def fake_run(path: Path, *, timeout: float, columns: tuple[str, ...]) -> dict:
+        del path, columns
+        seen["timeout"] = timeout
+        time = (0.0, 1e-12)
+        phase = (0.0, 2 * math.pi)
+        return {"P(B1|XMID)": (time, phase)}
+
+    monkeypatch.setattr("golden.run_josim", fake_run)
+    monkeypatch.setattr("golden.josim_version", lambda: "vtest")
+
+    generate_entry("demo", netlist, stimulus, root=tmp_path, timeout=600)
+
+    assert seen["timeout"] == 600
 
 
 # report.txt crossings for XMID, rounded half up to 1 fs. DECISIONS.md lags were

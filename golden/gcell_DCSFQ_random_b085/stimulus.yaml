@@ -1,0 +1,3 @@
+ports:
+  dut.q: P(B3|XDUT)
+  load_q.q: P(B2|XLOAD_Q)

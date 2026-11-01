@@ -1,0 +1,537 @@
+* Fluxel JoSIM export
+.param bias_mul=1.15
+
+* Back-annotated simulation file written by InductEx v.6.1.52 on 2022/07/25.
+* Author: L. Schindler
+* Version: 3.0
+* Last modification date: 21 July 2022
+* Last modification by: T. Hall
+
+* Copyright (c) 2018-2022 Lieze Schindler, Tessa Hall, Stellenbosch University
+
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this cell library and associated documentation files (the "Library"), to deal
+* in the Library without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Library, and to permit persons to whom the Library is
+* furnished to do so, subject to the following conditions:
+
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Library.
+
+* THE LIBRARY IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE LIBRARY OR THE USE OR OTHER DEALINGS IN THE
+* LIBRARY.
+
+* For questions about the library, contact Tessa Hall, 19775539@sun.ac.za.
+
+* The cell is not designed to be connected directly to passive transmission lines.
+
+*$Ports 	a	q
+.subckt THmitll_DCSFQ a q
+.model jjmit jj(rtype=1, vg=2.8mV, cap=0.07pF, r0=160, rn=16, icrit=0.1mA)
+.param Phi0=2.067833848E-15
+.param B0=1
+.param Ic0=0.0001
+.param IcRs=100u*6.859904418
+.param B0Rs=IcRs/Ic0*B0
+.param Rsheet=2 
+.param Lsheet=1.13e-12 
+.param LP=0.5p
+.param IC=2.5
+.param LB=2p
+.param BiasCoef=0.7*bias_mul
+
+.param B1=2.25
+.param B2=2.25
+.param B3=IC
+
+.param IB1=(275u)*bias_mul
+.param IB2=B3*Ic0*BiasCoef
+
+.param LB1=LB
+.param LB2=LB
+
+.param L1=1p
+.param L2=3.9p
+.param L3=0.6p
+.param L4=1.1p
+.param L5=4.5p
+.param L6=Phi0/(4*IC*Ic0)
+
+.param LP2=LP
+.param LP3=LP
+
+.param RB1=B0Rs/B1
+.param RB2=B0Rs/B2
+.param RB3=B0Rs/B3
+
+.param LRB1=(RB1/Rsheet)*Lsheet
+.param LRB2=(RB2/Rsheet)*Lsheet+LP
+.param LRB3=(RB3/Rsheet)*Lsheet+LP
+
+B1 2 3 jjmit  area=B1 
+B2 5 6 jjmit  area=B2 
+B3 7 8 jjmit  area=B3 
+
+IB1 0 4 pwl(0 0 5p IB1)
+IB2 0 9 pwl(0 0 5p IB2)
+
+LB1 4 3 2.825E-012 
+LB2 9 7 2.942E-012 
+
+L1 a 1 1.672E-012 
+L2 1 0 3.901E-012 
+L3 1 2 5.953E-013 
+L4 3 5 1.1E-012 
+L5 5 7 4.542E-012 
+L6 7 q 2.012E-012 
+
+LP2 6 0 3.924E-013 
+LP3 8 0 3.841E-013 
+
+RB1 2 102 RB1  
+LRB1 102 3 LRB1 
+RB2 5 105 RB2  
+LRB2 105 0 LRB2 
+RB3 7 107 RB3  
+LRB3 107 0 LRB3
+ 
+.ends
+
+* Back-annotated simulation file written by InductEx v.6.1.52 on 2022/07/25.
+* Author: L. Schindler
+* Version: 3.0
+* Last modification date: 21 July 2022
+* Last modification by: T. Hall
+
+* Copyright (c) 2018-2022 Lieze Schindler, Tessa Hall, Stellenbosch University
+
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this cell library and associated documentation files (the "Library"), to deal
+* in the Library without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Library, and to permit persons to whom the Library is
+* furnished to do so, subject to the following conditions:
+
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Library.
+
+* THE LIBRARY IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE LIBRARY OR THE USE OR OTHER DEALINGS IN THE
+* LIBRARY.
+
+* For questions about the library, contact Tessa Hall, 19775539@sun.ac.za.
+
+* The cell is not designed to be connected directly to passive transmission lines.
+
+*$Ports 	a	q
+.subckt THmitll_JTL a q
+.model jjmit jj(rtype=1, vg=2.8mV, cap=0.07pF, r0=160, rn=16, icrit=0.1mA)
+.param Phi0=2.067833848E-15
+.param B0=1
+.param Ic0=0.0001
+.param IcRs=100u*6.859904418
+.param B0Rs=IcRs/Ic0*B0
+.param Rsheet=2 
+.param Lsheet=1.13e-12 
+.param LP=0.5p
+.param IC=2.5
+.param LB=2p
+.param BiasCoef=0.7*bias_mul
+
+.param B1=IC
+.param B2=IC
+
+.param IB1=(B1+B2)*Ic0*BiasCoef
+
+.param LB1=LB
+
+.param L1=Phi0/(4*B1*Ic0)
+.param L2=Phi0/(4*B1*Ic0)
+.param L3=Phi0/(4*B2*Ic0)
+.param L4=Phi0/(4*B2*Ic0)
+
+.param LP1=LP
+.param LP2=LP
+
+.param RB1=B0Rs/B1   
+.param RB2=B0Rs/B2
+
+.param LRB1=(RB1/Rsheet)*Lsheet+LP
+.param LRB2=(RB2/Rsheet)*Lsheet+LP
+
+B1 1 2 jjmit  area=B1 
+B2 5 6 jjmit  area=B2 
+
+IB1 0 4 pwl(0 0 5p IB1)
+
+LB1 4 3 2.336E-012 
+
+L1 a 1 2.07E-012 
+L2 1 3 2.088E-012 
+L3 3 5 2.082E-012 
+L4 5 q 2.072E-012 
+
+LP1 2 0 3.137E-013 
+LP2 6 0 3.123E-013 
+
+RB1 1 101 RB1  
+LRB1 101 0 LRB1 
+RB2 5 105 RB2  
+LRB2 105 0 LRB2 
+
+.ends
+
+* Back-annotated simulation file written by InductEx v.6.1.52 on 2022/08/25.
+* Author: T. Hall
+* Version: 3.0
+* Last modification date: 24 August 2022
+* Last modification by: T. Hall
+
+* Copyright (c) 2018-2022 Lieze Schindler, Tessa Hall, Stellenbosch University
+
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this cell library and associated documentation files (the "Library"), to deal
+* in the Library without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Library, and to permit persons to whom the Library is
+* furnished to do so, subject to the following conditions:
+
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Library.
+
+* THE LIBRARY IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE LIBRARY OR THE USE OR OTHER DEALINGS IN THE
+* LIBRARY.
+
+* For questions about the library, contact Tessa Hall, 19775539@sun.ac.za.
+
+* The cell is not designed to be connected directly to passive transmission lines.
+
+*$Ports 	a	clk	q
+.subckt THmitll_NOT a clk q
+.model jjmit jj(rtype=1, vg=2.8mV, cap=0.07pF, r0=160, rn=16, icrit=0.1mA)
+.param Phi0=2.067833848E-15
+.param B0=1
+.param Ic0=0.0001
+.param IcRs=100u*6.859904418
+.param B0Rs=IcRs/Ic0*B0
+.param Rsheet=2 
+.param Lsheet=1.13e-12 
+.param LP=0.5p
+.param IC=2.5
+.param LB=2p
+.param BiasCoef=0.7*bias_mul
+
+.param B1=2.5
+.param B2=0.78
+.param B3=0.85
+.param B4=2.69
+.param B5=2.5
+.param B6=1.42
+.param B7=1.01
+.param B8=2.5
+
+.param IB1=(175u)*bias_mul
+.param IB2=(131u)*bias_mul
+.param IB3=(175u)*bias_mul
+.param IB4=(175u)*bias_mul
+
+.param LB1=LB
+.param LB2=LB
+.param LB3=LB
+.param LB4=LB
+
+.param L1=0.8555p
+.param L2=2.7537p
+.param L3=0.7553p
+.param L4=7.3609p
+.param L5=0.8585p
+.param L6=3.0349p
+.param L7=0.9373p
+.param L8=4.2782p
+.param L9=0.9209p
+
+.param LP1=LP
+.param LP5=LP
+.param LP7=LP
+.param LP8=LP
+
+.param RB1=B0Rs/B1
+.param RB2=B0Rs/B2
+.param RB3=B0Rs/B3
+.param RB4=B0Rs/B4
+.param RB5=B0Rs/B5
+.param RB6=B0Rs/B6
+.param RB7=B0Rs/B7
+.param RB8=B0Rs/B8
+
+.param LRB1=(RB1/Rsheet)*Lsheet+LP
+.param LRB2=(RB2/Rsheet)*Lsheet
+.param LRB3=(RB3/Rsheet)*Lsheet
+.param LRB4=(RB4/Rsheet)*Lsheet
+.param LRB5=(RB5/Rsheet)*Lsheet+LP
+.param LRB6=(RB6/Rsheet)*Lsheet
+.param LRB7=(RB7/Rsheet)*Lsheet+LP
+.param LRB8=(RB8/Rsheet)*Lsheet+LP
+
+B1 1 2 jjmit  area=B1 
+B2 4 5 jjmit  area=B2 
+B3 7 8 jjmit  area=B3 
+B4 9 10 jjmit  area=B4 
+B5 11 12 jjmit  area=B5 
+B6 10 14 jjmit  area=B6 
+B7 8 15 jjmit  area=B7 
+B8 16 17 jjmit  area=B8 
+
+IB1 0 3 pwl(0 0 5p IB1)
+IB2 0 6 pwl(0 0 5p IB2)
+IB3 0 13 pwl(0 0 5p IB3)
+IB4 0 18 pwl(0 0 5p IB4)
+
+LB1 3 1 1.246E-012 
+LB2 6 5 1.707E-012 
+LB3 13 11 8.002E-013 
+LB4 18 16 8.582E-013 
+
+L1 a 1 8.521E-013 
+L2 1 4 2.756E-012 
+L3 5 7 7.55E-013 
+L4 5 9 7.358E-012 
+L5 clk 11 8.595E-013 
+L6 11 10 3.051E-012 
+L7 8 14 9.435E-013 
+L8 8 16 4.287E-012 
+L9 16 q 9.3E-013 
+
+LP1 2 0 3.288E-013 
+LP5 12 0 3.499E-013 
+LP7 15 0 4.831E-013 
+LP8 17 0 3.407E-013 
+
+RB1 1 101 RB1  
+LRB1 101 0 LRB1 
+RB2 4 104 RB2  
+LRB2 104 5 LRB2 
+RB3 7 107 RB3  
+LRB3 107 8 LRB3 
+RB4 9 109 RB4  
+LRB4 109 10 LRB4 
+RB5 11 111 RB5  
+LRB5 111 0 LRB5 
+RB6 10 110 RB6  
+LRB6 110 14 LRB6 
+RB7 8 108 RB7  
+LRB7 108 0 LRB7 
+RB8 16 116 RB8  
+LRB8 116 0 LRB8 
+
+.ends
+
+* Back-annotated simulation file written by InductEx v.6.1.52 on 2022/08/08.
+* Adapted from Fluxonics SDQDC_v5
+* Author: L. Schindler
+* Version: 3.0
+* Last modification date: 4 August 2022
+* Last modification by: T. Hall
+
+* Copyright (c) 2018-2022 Lieze Schindler, Tessa Hall, Stellenbosch University
+
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this cell library and associated documentation files (the "Library"), to deal
+* in the Library without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Library, and to permit persons to whom the Library is
+* furnished to do so, subject to the following conditions:
+
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Library.
+
+* THE LIBRARY IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE LIBRARY OR THE USE OR OTHER DEALINGS IN THE
+* LIBRARY.
+
+* For questions about the library, contact Tessa Hall, 19775539@sun.ac.za.
+
+* The cell is not designed to be connected directly to passive transmission lines.
+
+*$Ports 	a	q
+.subckt THmitll_SFQDC a q
+.model jjmit jj(rtype=1, vg=2.8mV, cap=0.07pF, r0=160, rn=16, icrit=0.1mA)
+.param Phi0=2.067833848E-15
+.param B0=1
+.param Ic0=0.0001
+.param IcRs=100u*6.859904418
+.param B0Rs=IcRs/Ic0*B0
+.param Rsheet=2 
+.param Lsheet=1.13e-12 
+.param LP=0.5p
+.param IC=2.5
+.param LB=2p
+.param BiasCoef=0.7*bias_mul
+
+.param B1=3.25
+.param B2=1.50
+.param B3=1.75
+.param B4=2.00
+.param B5=3.00
+.param B6=1.50
+.param B7=1.50
+.param B8=2.00
+
+.param IB1=(280u)*bias_mul
+.param IB2=(150u)*bias_mul
+.param IB3=(220u)*bias_mul
+.param IB4=(80u)*bias_mul
+
+.param LB1=LB
+.param LB2=LB
+.param LB3=LB
+.param LB4=LB
+
+.param L1=1.522p
+.param L2=0.827p
+.param L3=1.12884p
+.param L4=5.94p
+.param L5=1.11098p
+.param L6=3.216p
+.param L7=0.215p
+.param L8=0.954p
+.param L9=3.699p
+.param L10=2.010p
+.param L11=1.510p
+
+.param LR1=0.91p
+.param R1=0.375
+
+.param LP1=LP
+.param LP3=LP
+.param LP5=LP
+.param LP7=LP
+.param LP8=LP
+
+.param RB1=B0Rs/B1
+.param RB2=B0Rs/B2
+.param RB3=B0Rs/B3
+.param RB4=B0Rs/B4
+.param RB5=B0Rs/B5
+.param RB6=B0Rs/B6
+.param RB7=B0Rs/B7
+.param RB8=B0Rs/B8
+
+.param LRB1=(RB1/Rsheet)*Lsheet+LP
+.param LRB2=(RB2/Rsheet)*Lsheet
+.param LRB3=(RB3/Rsheet)*Lsheet+LP
+.param LRB4=(RB4/Rsheet)*Lsheet
+.param LRB5=(RB5/Rsheet)*Lsheet+LP
+.param LRB6=(RB6/Rsheet)*Lsheet
+.param LRB7=(RB7/Rsheet)*Lsheet+LP
+.param LRB8=(RB8/Rsheet)*Lsheet+LP
+
+B1 1 2 jjmit  area=B1 
+B2 5 6 jjmit  area=B2 
+B3 6 8 jjmit  area=B3 
+B4 10 11 jjmit  area=B4 
+B5 11 12 jjmit  area=B5 
+B6 14 15 jjmit  area=B6 
+B7 17 18 jjmit  area=B7 
+B8 21 22 jjmit  area=B8 
+
+IB1 0 3 pwl(0 0 5p IB1)
+IB2 0 7 pwl(0 0 5p IB2)
+IB3 0 16 pwl(0 0 5p IB3)
+IB4 0 20 pwl(0 0 5p IB4)
+
+LB1 3 1 1.401E-012 
+LB2 7 6 6.064E-013 
+LB3 16 15 1.989E-012 
+LB4 20 19 8.87E-013 
+
+L1 a 1 1.529E-012 
+L2 1 4 8.239E-013 
+L3 5 4 1.124E-012 
+L4 6 9 5.898E-012 
+L5 4 10 1.111E-012 
+L6 9 11 3.227E-012 
+L7 9 14 2.138E-013 
+L8 15 17 9.503E-013 
+L9 17 19 3.696E-012 
+L10 19 21 2.001E-012 
+L11 21 q 1.496E-012 
+
+R1 0 13 R1  
+LR1 13 9 9.11E-013 
+
+LP1 2 0 3.162E-013 
+LP3 8 0 4.507E-013 
+LP5 12 0 6.57E-013 
+LP7 18 0 4.343E-013 
+LP8 22 0 3.726E-013 
+
+RB1 1 101 RB1  
+LRB1 101 0 LRB1 
+RB2 5 105 RB2  
+LRB2 105 6 LRB2 
+RB3 6 106 RB3  
+LRB3 106 0 LRB3 
+RB4 10 110 RB4  
+LRB4 110 11 LRB4 
+RB5 11 111 RB5  
+LRB5 111 0 LRB5 
+RB6 14 114 RB6  
+LRB6 114 15 LRB6 
+RB7 17 117 RB7  
+LRB7 117 0 LRB7 
+RB8 21 121 RB8  
+LRB8 121 0 LRB8 
+
+.ends
+
+Xdut THmitll_NOT n_src_a_q n_src_clk_q n_dut_q
+Xload_q THmitll_JTL n_dut_q n_load_q_q
+Xsrc_a THmitll_JTL n_a n_src_a_q
+Xsrc_clk THmitll_JTL n_clk n_src_clk_q
+
+Xfxsrc_a THmitll_DCSFQ n_fxsrc_a_a n_a
+Ifxsrc_a 0 n_fxsrc_a_a pwl(0 0)
+Xfxsrc_clk THmitll_DCSFQ n_fxsrc_clk_a n_clk
+Ifxsrc_clk 0 n_fxsrc_clk_a pwl(0 0 220p 0 223p 600u 226p 0 226.2p 0 229.2p 600u 232.2p 0)
+
+Xfxload_q THmitll_SFQDC n_load_q_q n_fxload_q_q
+Rfxload_q n_fxload_q_q 0 2
+
+.tran 0.025p 726.2p 0
+* fluxel-map dut.a P(B1|XDUT)
+* fluxel-map dut.clk P(B5|XDUT)
+* fluxel-map dut.q P(B8|XDUT)
+* fluxel-map fxload_q.a P(B1|XFXLOAD_Q)
+* fluxel-map fxload_q.q P(B8|XFXLOAD_Q)
+* fluxel-map fxsrc_a.a P(B1|XFXSRC_A)
+* fluxel-map fxsrc_a.q P(B3|XFXSRC_A)
+* fluxel-map fxsrc_clk.a P(B1|XFXSRC_CLK)
+* fluxel-map fxsrc_clk.q P(B3|XFXSRC_CLK)
+* fluxel-map load_q.a P(B1|XLOAD_Q)
+* fluxel-map load_q.q P(B2|XLOAD_Q)
+* fluxel-map src_a.a P(B1|XSRC_A)
+* fluxel-map src_a.q P(B2|XSRC_A)
+* fluxel-map src_clk.a P(B1|XSRC_CLK)
+* fluxel-map src_clk.q P(B2|XSRC_CLK)
+.print p(B1.Xdut) p(B5.Xdut) p(B8.Xdut) p(B1.Xfxload_q) p(B8.Xfxload_q) p(B1.Xfxsrc_a) p(B3.Xfxsrc_a) p(B1.Xfxsrc_clk) p(B3.Xfxsrc_clk) p(B1.Xload_q) p(B2.Xload_q) p(B1.Xsrc_a) p(B2.Xsrc_a) p(B1.Xsrc_clk) p(B2.Xsrc_clk)
+.end

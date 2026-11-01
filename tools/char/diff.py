@@ -22,6 +22,7 @@ class PulseDiff:
     mean_pct: float
     max_pct: float
     histogram_pct: tuple[tuple[float, int], ...]
+    pairs: tuple[tuple[str, int, int], ...]
 
 
 def diff(
@@ -36,14 +37,16 @@ def diff(
     missing: list[tuple[str, int]] = []
     extra: list[tuple[str, int]] = []
     errors: list[int] = []
+    paired: list[tuple[str, int, int]] = []
     ports = set(reference) | set(candidate)
     for port in sorted(ports):
         ref = sorted(reference.get(port, ()))
         cand = sorted(candidate.get(port, ()))
-        pairs, missed, added = _match_port(ref, cand)
+        matches, missed, added = _match_port(ref, cand)
         missing.extend((port, time) for time in missed)
         extra.extend((port, time) for time in added)
-        errors.extend(cand_t - ref_t for ref_t, cand_t in pairs)
+        errors.extend(cand_t - ref_t for ref_t, cand_t in matches)
+        paired.extend((port, ref_t, cand_t) for ref_t, cand_t in matches)
 
     if errors:
         mean_fs = sum(errors) / len(errors)
@@ -64,6 +67,7 @@ def diff(
         mean_pct=100 * mean_fs / nominal_fs,
         max_pct=100 * max_fs / nominal_fs,
         histogram_pct=histogram_pct,
+        pairs=tuple(paired),
     )
 
 
